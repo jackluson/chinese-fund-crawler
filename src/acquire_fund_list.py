@@ -95,7 +95,7 @@ def get_fund_list(cookie_str=None):
     page_count = 25
     page_num_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
-    # 爬取共306页
+
     result_dir = './output/'
     output_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
         '类型' + ',' + '三年评级' + ',' + '五年评级' + ',' + '今年回报率' + '\n'
@@ -162,14 +162,13 @@ def get_fund_list(cookie_str=None):
                 rate_of_return.append(return_value)
 
         print('数据准备完毕')
-        fund_df = pd.DataFrame({'fund_code': code_list, 'morning_star_code': morning_star_code_list, 'fund_name': name_list, 'fund_cat': fund_cat,
+        fund_df = pd.DataFrame({'id': id_list, 'fund_code': code_list, 'morning_star_code': morning_star_code_list, 'fund_name': name_list, 'fund_cat': fund_cat,
                                 'fund_rating_3': fund_rating_3, 'fund_rating_5': fund_rating_5, 'rate_of_return': rate_of_return})
         sql_insert = "replace into fund_morning_star(`id`, `fund_code`,`morning_star_code`, `fund_name`, `fund_cat`, `fund_rating_3`, `fund_rating_5`, `rate_of_return`) values(%s, %s, %s, %s, %s, %s, %s, %s)"
+        # print('fund_df', fund_df)
         fund_list = fund_df.values.tolist()
         # cursor.executemany(sql_insert, fund_list)
         # connect.commit()
-        # sql_insert = "insert into fund_morning_star(`fund_code`, `fund_name`, `fund_cat`, `fund_rate_3`, `fund_rate_5`, `rate_of_return`) values(%s, %s, %s, %s, %s, %s)"
-        # ALTER TABLE fund_morning_star  MODIFY COLUMN update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         print('fund_list', fund_list)
         with open(result_dir + 'fund_morning_star.csv', 'a') as csv_file:
             for fund_item in fund_list:

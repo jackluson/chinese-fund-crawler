@@ -1,7 +1,12 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+code-record/*
+!.gitkeep
 *.py[cod]
 *$py.class
+.vscode/
+*fund_morning_star.csv
+
 
 # C extensions
 *.so

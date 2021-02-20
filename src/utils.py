@@ -41,7 +41,7 @@ def identify_verification_code(chrome_driver, id="checkcodeImg"):
     directory_time = time.strftime("%Y-%m-%d", time.localtime(time.time()))
     # 获取到当前文件的目录，并检查是否有 directory_time 文件夹，如果不存在则自动新建 directory_time 文件
     try:
-        file_Path = os.getcwd() + '/' + directory_time + '/'
+        file_Path = os.getcwd() + '/code-record/' + directory_time + '/'
         if not os.path.exists(file_Path):
             os.makedirs(file_Path)
             print("目录新建成功：%s" % file_Path)
@@ -52,7 +52,7 @@ def identify_verification_code(chrome_driver, id="checkcodeImg"):
     try:
         from selenium.webdriver.common.by import By
         ele = chrome_driver.find_element(By.ID, id)
-        code_path = './' + directory_time + '/' + picture_time + '_code.png'
+        code_path = './code-record/' + directory_time + '/' + picture_time + '_code.png'
         url = ele.screenshot(code_path)
         if url:
             print("%s ：截图成功！！！" % url)
@@ -99,7 +99,7 @@ def login_site(chrome_driver, site_url):
     password = chrome_driver.find_element_by_id('pwdValue')
     check_code = chrome_driver.find_element_by_id('txtCheckCode')
     username.send_keys('18219112108@163.com')
-    password.send_keys('w780880')
+    password.send_keys('xxxx')
     count = 1
     flag = True
     while count < 10 and flag:

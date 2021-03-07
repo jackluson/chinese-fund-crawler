@@ -91,7 +91,9 @@ def get_star_count(morning_star_url):
             return i
 
 
-def login_site(chrome_driver, site_url):
+def login_site(chrome_driver, site_url, redirect_url=None):
+    site_url = site_url if redirect_url == None else site_url + \
+        '?ReturnUrl=' + redirect_url
     chrome_driver.get(site_url)
     time.sleep(2)
     from selenium.webdriver.support import expected_conditions as EC

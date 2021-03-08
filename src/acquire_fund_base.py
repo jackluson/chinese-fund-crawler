@@ -48,7 +48,8 @@ if __name__ == '__main__':
     page_limit = 10
     record_total = count[0]
     page_start = 3890
-    error_funds = ['005086']
+    error_funds = ['005086']  # 一些异常的基金详情页，如果发现记录该基金的code
+    # 遍历从基金列表的单支基金
     while(page_start < record_total):
         sql = "SELECT fund_code, morning_star_code, fund_name FROM fund_morning_snapshot WHERE fund_code IS NOT NULL AND morning_star_code IS NOT NULL ORDER BY fund_code LIMIT %s, %s"
         cursor.execute(
@@ -65,6 +66,7 @@ if __name__ == '__main__':
                 error_funds.append(each_fund.fund_code)
                 continue
             # each_fund.get_asset_composition_info()
+            # 拼接sql需要的数据
             snow_flake_id = IdWorker.get_id()
             base_dict = {
                 'id': snow_flake_id,
@@ -82,6 +84,7 @@ if __name__ == '__main__':
                 if key in ['id', 'fund_code']:
                     continue
                 update_values = update_values + '{0}=VALUES({0}),'.format(key)
+            # 入库，不存在则创建，存在则更新
             base_sql_insert = "INSERT INTO {table} ({keys}) VALUES ({values})  ON DUPLICATE KEY UPDATE {update_values}; ".format(
                 table='fund_morning_base',
                 keys=keys,

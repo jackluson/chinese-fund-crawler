@@ -10,7 +10,6 @@ Copyright (c) 2020 Camel Lu
 
 import re
 from time import sleep
-from IOFile import crawl_html
 from bs4 import BeautifulSoup
 from utils import parse_cookiestr, set_cookies, login_site
 
@@ -40,6 +39,40 @@ class FundInfo:
         self.risk_assessment = dict()  # 标准差 风险系数 夏普比
         self.risk_statistics = dict()  # 阿尔法 贝塔 R平方值
     # 处理基金详情页跳转
+
+    def login_morning_star(self, cookie_str=None):
+        login_url = 'https://www.morningstar.cn/membership/signin.aspx'
+        if self.chrome_driver == None:
+            from selenium import webdriver
+            chrome_options = webdriver.ChromeOptions()
+            chrome_options.add_argument("--no-sandbox")
+            # chrome_driver = webdriver.Chrome("/usr/local/chromedriver")
+            self.chrome_driver = webdriver.Chrome(options=chrome_options)
+            self.chrome_driver.set_page_load_timeout(12000)
+            """
+        模拟登录,支持两种方式：
+            1. 设置已经登录的cookie
+            2. 输入账号，密码，验证码登录（验证码识别正确率30%，识别识别支持重试）
+        """
+        if cookie_str:
+            set_cookies(self.chrome_driver,
+                        login_url, cookie_str)
+        else:
+            if self.morning_cookies == None:
+                login_status = login_site(
+                    self.chrome_driver, login_url)
+                if login_status:
+                    print('login success')
+                    sleep(3)
+                else:
+                    print('login fail')
+                    exit()
+                # 获取网站cookie
+                morning_cookies = self.chrome_driver.get_cookies()
+            else:
+                self.morning_cookies = self.chrome_driver.get_cookies()
+                # print('cookies', self.morning_cookies)  # 打印设置成功的cookie
+    # 更新基金信息，从晨星网上抓取，利用selinum原理
 
     def go_fund_url(self, cookie_str=None):
         self.login_morning_star(cookie_str)

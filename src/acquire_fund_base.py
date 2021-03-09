@@ -47,7 +47,7 @@ if __name__ == '__main__':
     IdWorker = IdWorker()
     page_limit = 10
     record_total = count[0]
-    page_start = 3890
+    page_start = 0
     error_funds = ['005086']  # 一些异常的基金详情页，如果发现记录该基金的code
     # 遍历从基金列表的单支基金
     while(page_start < record_total):
@@ -58,14 +58,15 @@ if __name__ == '__main__':
         for record in results:
             each_fund = FundInfo(
                 record[0], record[1], record[2], chrome_driver, morning_cookies)
-            # 从天天基金网上更新信息
-            # each_fund.update_fund_info_by_tiantian()
             # 从晨星网上更新信息
-            is_normal = each_fund.get_fund_detail_info()
-            if is_normal == False or each_fund.found_date == '-':
+            is_normal = each_fund.go_fund_url()
+            if is_normal == False:
                 error_funds.append(each_fund.fund_code)
                 continue
-            # each_fund.get_asset_composition_info()
+            each_fund.get_fund_base_info()
+            if each_fund.found_date == '-':
+                error_funds.append(each_fund.fund_code)
+                continue
             # 拼接sql需要的数据
             snow_flake_id = IdWorker.get_id()
             base_dict = {

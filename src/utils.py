@@ -101,7 +101,7 @@ def login_site(chrome_driver, site_url, redirect_url=None):
     password = chrome_driver.find_element_by_id('pwdValue')
     check_code = chrome_driver.find_element_by_id('txtCheckCode')
     username.send_keys('18219112108@163.com')
-    password.send_keys('w780880')
+    password.send_keys('xxxx')
     count = 1
     flag = True
     while count < 10 and flag:

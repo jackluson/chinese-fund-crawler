@@ -14,10 +14,10 @@ from threading import Thread, Lock, current_thread
 from utils import parse_cookiestr, set_cookies, login_site
 from fund_info_crawler import FundInfo
 from lib.mysnowflake import IdWorker
-from time import sleep
+from time import sleep, time
 import pymysql
 connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='xxx', db='fund_work', charset='utf8')
+                          password='rootroot', db='fund_work', charset='utf8')
 cursor = connect.cursor()
 lock = Lock()
 
@@ -95,13 +95,16 @@ if __name__ == '__main__':
             print(current_thread().getName(), 'page_start', page_start)
             sleep(3)
         chrome_driver.close()
-    t = Thread(target=crawlData, args=(record_total,))
-    t.setDaemon(True)
-    t.start()
-    t2 = Thread(target=crawlData, args=(record_total,))
-    t2.setDaemon(True)
-    t2.start()
-    t2.join()
-    t.join()
+    threaders = []
+    start = time()
+    for i in range(4):
+        t = Thread(target=crawlData, args=(record_total,))
+        t.setDaemon(True)
+        threaders.append(t)
+        t.start()
+    for threader in threaders:
+        threader.join()
+    stop = time()
+    print('run time is %s' % (stop-start))
     print('error_funds', error_funds)
     exit()

@@ -10,15 +10,16 @@ Copyright (c) 2020 Camel Lu
 '''
 
 import math
+from threading import Thread, Lock, current_thread
 from utils import parse_cookiestr, set_cookies, login_site
-from IOFile import read_group_fund_json, read_chenxingcode_json
-from FundParameterInfo import FundInfo
+from fund_info_crawler import FundInfo
 from lib.mysnowflake import IdWorker
 from time import sleep
 import pymysql
 connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='xxxx', db='fund_work', charset='utf8')
+                          password='xxx', db='fund_work', charset='utf8')
 cursor = connect.cursor()
+lock = Lock()
 
 
 def login():
@@ -28,8 +29,10 @@ def login():
     chrome_driver = webdriver.Chrome(options=chrome_options)
     chrome_driver.set_page_load_timeout(12000)
     login_url = 'https://www.morningstar.cn/membership/signin.aspx'
+    lock.acquire()
     login_status = login_site(
         chrome_driver, login_url)
+    lock.release()
     if login_status:
         print('login success')
     else:
@@ -39,8 +42,6 @@ def login():
 
 
 if __name__ == '__main__':
-    # chrome_driver = login()
-    # morning_cookies = chrome_driver.get_cookies()
     # 过滤没有股票持仓的基金
     sql_count = "SELECT COUNT(1) FROM fund_morning_base \
     LEFT JOIN fund_morning_snapshot ON fund_morning_snapshot.fund_code = fund_morning_base.fund_code \
@@ -52,35 +53,55 @@ if __name__ == '__main__':
     count = cursor.fetchone()    # 获取记录条数
     print('count', count[0])
     IdWorker = IdWorker()
-    page_limit = 20
+    page_limit = 5
     record_total = count[0]
-    page_start = 1
+    page_start = 0
     error_funds = []
-    while(page_start < record_total):
-        sql = "SELECT fund_morning_base.fund_code,\
-        fund_morning_base.fund_name, fund_morning_base.fund_cat, fund_morning_base.morning_star_code, \
-        fund_morning_snapshot.fund_rating_3,fund_morning_snapshot.fund_rating_5 \
-        FROM fund_morning_base \
-        LEFT JOIN fund_morning_snapshot ON fund_morning_snapshot.fund_code = fund_morning_base.fund_code \
-        WHERE fund_morning_base.fund_cat NOT LIKE '%%货币%%' \
-        AND fund_morning_base.fund_cat NOT LIKE '%%纯债基金%%' \
-        AND fund_morning_base.fund_cat NOT LIKE '目标日期' \
-        AND fund_morning_base.fund_cat NOT LIKE '%%短债基金%%' \
-        ORDER BY fund_morning_snapshot.fund_rating_5 DESC,fund_morning_snapshot.fund_rating_3 DESC, \
-        fund_morning_base.fund_cat, fund_morning_base.fund_code LIMIT %s, %s"
-        cursor.execute(
-            sql, [page_start, page_limit])    # 执行sql语句
-        results = cursor.fetchall()    # 获取查询的所有记录
-        for record in results:
-            print('record', record)
-            continue
-            each_fund = FundInfo(
-                record[0], record[1], record[2], 1, 1)
 
-            # fund_list.append(each_fund)
-        page_start = page_start + page_limit
-        print('page_start', page_start)
-        sleep(3)
-    chrome_driver.close()
+    def crawlData(total):
+        chrome_driver = login()
+        morning_cookies = chrome_driver.get_cookies()
+        print('total', total)
+        page_start = 0
+        page_limit = 5
+        while(page_start < total):
+            sql = "SELECT fund_morning_base.fund_code,\
+            fund_morning_base.morning_star_code, fund_morning_base.fund_name, fund_morning_base.fund_cat, \
+            fund_morning_snapshot.fund_rating_3,fund_morning_snapshot.fund_rating_5 \
+            FROM fund_morning_base \
+            LEFT JOIN fund_morning_snapshot ON fund_morning_snapshot.fund_code = fund_morning_base.fund_code \
+            WHERE fund_morning_base.fund_cat NOT LIKE '%%货币%%' \
+            AND fund_morning_base.fund_cat NOT LIKE '%%纯债基金%%' \
+            AND fund_morning_base.fund_cat NOT LIKE '目标日期' \
+            AND fund_morning_base.fund_cat NOT LIKE '%%短债基金%%' \
+            ORDER BY fund_morning_snapshot.fund_rating_5 DESC,fund_morning_snapshot.fund_rating_3 DESC, \
+            fund_morning_base.fund_cat, fund_morning_base.fund_code LIMIT %s, %s"
+            lock.acquire()
+            cursor.execute(
+                sql, [page_start, page_limit])    # 执行sql语句
+            results = cursor.fetchall()    # 获取查询的所有记录
+            lock.release()
+            for record in results:
+                sleep(1)
+                print(current_thread().getName(), 'record-->', record)
+                each_fund = FundInfo(
+                    record[0], record[1], record[2], chrome_driver, morning_cookies)
+                is_normal = each_fund.go_fund_url()
+                if is_normal == False:
+                    error_funds.append(each_fund.fund_code)
+                    continue
+                continue
+            page_start = page_start + page_limit
+            print(current_thread().getName(), 'page_start', page_start)
+            sleep(3)
+        chrome_driver.close()
+    t = Thread(target=crawlData, args=(record_total,))
+    t.setDaemon(True)
+    t.start()
+    t2 = Thread(target=crawlData, args=(record_total,))
+    t2.setDaemon(True)
+    t2.start()
+    t2.join()
+    t.join()
     print('error_funds', error_funds)
     exit()

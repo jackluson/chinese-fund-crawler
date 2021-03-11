@@ -14,7 +14,7 @@ from fund_info_crawler import FundInfo
 from lib.mysnowflake import IdWorker
 import pymysql
 connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='xxxx', db='fund_work', charset='utf8')
+                          password='rootroot', db='fund_work', charset='utf8')
 cursor = connect.cursor()
 
 

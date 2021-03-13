@@ -12,55 +12,58 @@ import re
 from time import sleep
 from bs4 import BeautifulSoup
 from utils import parse_cookiestr, set_cookies, login_site
+from selenium.common.exceptions import NoSuchElementException
 
 
 class FundInfo:
     # 初始化定义，利用基金代码、基金名称进行唯一化
     def __init__(self, code, namecode, name,  chrome_driver, morning_cookies):
-        self.season_number = '2021-1'
+        self.season_number = '2021-1s'
         self.fund_code = code  # 基金代码，需要初始化赋值
         self.fund_name = name  # 基金名称，需要初始化赋值
         self.morning_star_code = namecode  # 基金编码，晨星网特有，需要建立索引表
 
-        self.morning_cookies = morning_cookies or None
-        self.chrome_driver = chrome_driver or None
+        self._morning_cookies = morning_cookies or None
+        self._chrome_driver = chrome_driver or None
 
-        # 通过晨星网获取
+        # 基本信息
         self.fund_cat = None  # 基金分类
         self.found_date = None  # 成立时间
+        self.company = None  # 基金公司
+        # 季度变动信息
         self.total_asset = None  # 总资产
         self.investname_style = None  # 投资风格
         self.manager = dict()  # 基金经理,name,id,管理时间
-        self.company = None  # 基金公司
         self.three_month_retracement = 0.0  # 三个月最大回撤
         self.bond_total_position = dict()  # 债券总仓位、前五大持仓
         self.stock_total_position = dict()  # 股票总仓位、前十大持仓
-        self.ten_top_stock_list = []  # 股票十大持仓股信息
         self.risk_assessment = dict()  # 标准差 风险系数 夏普比
         self.risk_statistics = dict()  # 阿尔法 贝塔 R平方值
+        # 十大持仓信息
+        self.ten_top_stock_list = []  # 股票十大持仓股信息
     # 处理基金详情页跳转
 
     def login_morning_star(self, cookie_str=None):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-        if self.chrome_driver == None:
+        if self._chrome_driver == None:
             from selenium import webdriver
             chrome_options = webdriver.ChromeOptions()
             chrome_options.add_argument("--no-sandbox")
-            # chrome_driver = webdriver.Chrome("/usr/local/chromedriver")
-            self.chrome_driver = webdriver.Chrome(options=chrome_options)
-            self.chrome_driver.set_page_load_timeout(12000)
+            # _chrome_driver = webdriver.Chrome("/usr/local/chromedriver")
+            self._chrome_driver = webdriver.Chrome(options=chrome_options)
+            self._chrome_driver.set_page_load_timeout(12000)
             """
         模拟登录,支持两种方式：
             1. 设置已经登录的cookie
             2. 输入账号，密码，验证码登录（验证码识别正确率30%，识别识别支持重试）
         """
         if cookie_str:
-            set_cookies(self.chrome_driver,
+            set_cookies(self._chrome_driver,
                         login_url, cookie_str)
         else:
-            if self.morning_cookies == None:
+            if self._morning_cookies == None:
                 login_status = login_site(
-                    self.chrome_driver, login_url)
+                    self._chrome_driver, login_url)
                 if login_status:
                     print('login success')
                     sleep(3)
@@ -68,10 +71,10 @@ class FundInfo:
                     print('login fail')
                     exit()
                 # 获取网站cookie
-                morning_cookies = self.chrome_driver.get_cookies()
+                _morning_cookies = self._chrome_driver.get_cookies()
             else:
-                self.morning_cookies = self.chrome_driver.get_cookies()
-                # print('cookies', self.morning_cookies)  # 打印设置成功的cookie
+                self._morning_cookies = self._chrome_driver.get_cookies()
+                # print('cookies', self._morning_cookies)  # 打印设置成功的cookie
     # 更新基金信息，从晨星网上抓取，利用selinum原理
 
     def go_fund_url(self, cookie_str=None):
@@ -79,20 +82,136 @@ class FundInfo:
         morning_fund_selector_url = "https://www.morningstar.cn/quicktake/" + \
             self.morning_star_code
 
-        # 获取基金三个月内的最大回撤
-        self.chrome_driver.get(morning_fund_selector_url)  # 打开爬取页面
+        self._chrome_driver.get(morning_fund_selector_url)  # 打开爬取页面
         sleep(6)
         # 判断是否页面出错，重定向，如果是的话跳过
-        if self.chrome_driver.current_url == 'https://www.morningstar.cn/errors/defaulterror.html':
+        if self._chrome_driver.current_url == 'https://www.morningstar.cn/errors/defaulterror.html':
             return False
+        if self._chrome_driver.page_source == None:
+            self._chrome_driver.refresh()
+            print('fund_code', self.fund_code)
+            sleep(9)
+            # self._chrome_driver.execute_script('location.reload()')
 
-    def get_fund_base_info(self,  cookie_str=None):
+    def get_element_text_by_class_name(self, class_name, parent_id):
+        try:
+            text = self._chrome_driver.find_element_by_id(
+                parent_id).find_element_by_class_name(class_name).text
+            return text
+        except NoSuchElementException:
+            file_name = './abnormal/' + self.fund_code + "-no_such_element.png"
+            driver.save_screenshot(file_name)
+            # driver.get_screenshot_as_file(file_name)
+            raise  # 抛出异常，注释后则不抛出异常
+        return None
+
+    def get_element_text_by_xpath(self, xpath, parent_id=None, parent_el=None):
+        try:
+            text = '-'
+            if parent_el != None:
+                text = self._chrome_driver.find_element_by_id(
+                    parent_id).find_element_by_xpath(xpath).text if parent_id != None else self._chrome_driver.find_element_by_xpath(xpath).text
+            else:
+                text = parent_el.find_element_by_xpath(xpath).text
+            return text
+        except NoSuchElementException:
+            file_name = './abnormal/' + self.fund_code + "-no_such_element.png"
+            driver.save_screenshot(file_name)
+            # driver.get_screenshot_as_file(file_name)
+            raise  # 抛出异常，注释后则不抛出异常
+        return None
+
+    def get_fund_base_info(self):
         # 基金分类
-        self.fund_cat = self.chrome_driver.find_element_by_id(
+        self.fund_cat = self._chrome_driver.find_element_by_id(
             'qt_base').find_element_by_class_name("category").text
         # 成立时间
-        self.found_date = self.chrome_driver.find_element_by_id(
+        self.found_date = self._chrome_driver.find_element_by_id(
             'qt_base').find_element_by_class_name("inception").text
         # 基金公司
-        self.company = self.chrome_driver.find_element_by_id(
+        self.company = self._chrome_driver.find_element_by_id(
             'qt_management').find_element_by_xpath("//ul[@id='qt_management']/li[4]/span[@class='col2 comp']/a").text
+
+    # 获取基金经理信息
+    def get_fund_manager_info(self):
+        try:
+            # 基金经理
+            manager_ele = self._chrome_driver.find_element_by_id(
+                'qt_manager').find_element_by_xpath("ul")
+            manager_name = manager_ele.find_element_by_xpath(
+                "li[@class='col1']/a").text
+            manager_id = re.findall(
+                r'(?<=managerid=)(\w+)$',  manager_ele.find_element_by_xpath("li[@class='col1']/a").get_attribute('href')).pop(0)
+            manager_start_date = manager_ele.find_element_by_xpath(
+                "li[@class='col1']/i").text[0:10]
+            manager_brife = manager_ele.find_element_by_xpath(
+                "li[@class='col2']").text
+            self.manager['id'] = manager_id
+            self.manager['name'] = manager_name
+            self.manager['start_date'] = manager_start_date
+            self.manager['brife'] = manager_brife
+        except NoSuchElementException:
+            file_name = './abnormal/' + self.fund_code + "-no_such_element.png"
+            driver.save_screenshot(file_name)
+            # driver.get_screenshot_as_file(file_name)
+            raise  # 抛出异常，注释后则不抛出异常
+        return None
+
+    def get_fund_season_info(self):
+        # 投资风格
+        self.investname_style = self.get_element_text_by_class_name(
+            'sbdesc', 'qt_base')
+        # 总资产
+        self.total_asset = self.get_element_text_by_class_name(
+            "asset", 'qt_base')
+        # 三位最大回撤
+        self.three_month_retracement = self.get_element_text_by_class_name(
+            "r3", 'qt_worst')
+        # 获取股票总仓位、前十大持仓、债券总仓位、前五大持仓
+        self.stock_total_position["stock_total_position"] = self.get_element_text_by_class_name(
+            "stock", 'qt_asset')
+        # self.stock_total_position["stock_total_position"] = float(
+        #     stock_total_position) / 100 if stock_total_position != '-' else None  # 股票的总仓位
+        self.bond_total_position["bond_total_position"] = self.get_element_text_by_class_name(
+            "stock", 'qt_asset')
+
+        stock_total_position = re.findall(
+            r"\d+\.?\d*", self._chrome_driver.find_element_by_id("qt_stocktab").text).pop(0)
+        self.stock_total_position["ten_stock_position"] = float(
+            stock_total_position) / 100 if stock_total_position != '-' else None  # 十大股票仓位
+        bond_total_position = re.findall(
+            r"\d+\.?\d*", self._chrome_driver.find_element_by_id("qt_bondstab").text).pop(0)
+        self.bond_total_position["five_bond_position"] = float(
+            bond_total_position) / 100 if bond_total_position != '-' else None  # 五大债券仓位
+        # 获取标准差
+        standard_deviation = self._chrome_driver.find_element_by_id(
+            "qt_risk").find_element_by_xpath('li[16]').text
+        self.risk_assessment["standard_deviation"] = float(
+            standard_deviation) if standard_deviation != '-' else None
+        # 获取风险系数
+        risk_coefficient = self._chrome_driver.find_element_by_id(
+            "qt_risk").find_element_by_xpath('li[23]').text
+        self.risk_assessment["risk_coefficient"] = float(
+            risk_coefficient) if risk_coefficient != '-' else None
+        # 获取夏普比
+        sharpby = self._chrome_driver.find_element_by_id(
+            "qt_risk").find_elements_by_xpath('li').pop(29).text
+        self.risk_assessment["sharpby"] = float(
+            sharpby) if sharpby != '-' else None
+        # 获取阿尔法
+        alpha = self._chrome_driver.find_element_by_id(
+            "qt_riskstats").find_elements_by_xpath('li').pop(4).text
+
+        self.risk_statistics["alpha"] = float(
+            alpha) if alpha != '-' else None
+        # 获取贝塔
+        beta = self._chrome_driver.find_element_by_id(
+            "qt_riskstats").find_elements_by_xpath('li').pop(7).text
+        self.risk_statistics["beta"] = float(
+            beta) if beta != '-' else None
+        # 获取R平方
+        r_square = self._chrome_driver.find_element_by_id(
+            "qt_riskstats").find_elements_by_xpath('li').pop(10).text
+        self.risk_statistics["r_square"] = float(
+            r_square) if r_square != '-' else None
+        return True

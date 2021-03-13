@@ -58,13 +58,13 @@ if __name__ == '__main__':
     page_start = 0
     error_funds = []
 
-    def crawlData(total):
+    def crawlData(start, end):
         chrome_driver = login()
         morning_cookies = chrome_driver.get_cookies()
-        print('total', total)
-        page_start = 0
-        page_limit = 5
-        while(page_start < total):
+        print('end', end)
+        page_start = start
+        page_limit = 10
+        while(page_start < end):
             sql = "SELECT fund_morning_base.fund_code,\
             fund_morning_base.morning_star_code, fund_morning_base.fund_name, fund_morning_base.fund_cat, \
             fund_morning_snapshot.fund_rating_3,fund_morning_snapshot.fund_rating_5 \
@@ -87,9 +87,18 @@ if __name__ == '__main__':
                 each_fund = FundInfo(
                     record[0], record[1], record[2], chrome_driver, morning_cookies)
                 is_normal = each_fund.go_fund_url()
+                each_fund.get_fund_manager_info()
+                each_fund.get_fund_season_info()
+                print
                 if is_normal == False:
                     error_funds.append(each_fund.fund_code)
                     continue
+
+                fundDict = dict((name, getattr(each_fund, name))
+                                for name in vars(each_fund)
+                                if not (name.startswith('_') or getattr(each_fund, name) == None))
+
+                print(current_thread().getName(), fundDict)
                 continue
             page_start = page_start + page_limit
             print(current_thread().getName(), 'page_start', page_start)
@@ -97,8 +106,10 @@ if __name__ == '__main__':
         chrome_driver.close()
     threaders = []
     start = time()
-    for i in range(4):
-        t = Thread(target=crawlData, args=(record_total,))
+    step_num = 2500
+    for i in range(3):
+        print(i * step_num, (i+1) * step_num)
+        t = Thread(target=crawlData, args=(i * step_num, (i+1) * step_num))
         t.setDaemon(True)
         threaders.append(t)
         t.start()

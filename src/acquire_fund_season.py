@@ -87,13 +87,11 @@ if __name__ == '__main__':
                 each_fund = FundInfo(
                     record[0], record[1], record[2], chrome_driver, morning_cookies)
                 is_normal = each_fund.go_fund_url()
-                each_fund.get_fund_manager_info()
-                each_fund.get_fund_season_info()
-                print
                 if is_normal == False:
                     error_funds.append(each_fund.fund_code)
                     continue
-
+                each_fund.get_fund_manager_info()
+                each_fund.get_fund_season_info()
                 fundDict = dict((name, getattr(each_fund, name))
                                 for name in vars(each_fund)
                                 if not (name.startswith('_') or getattr(each_fund, name) == None))

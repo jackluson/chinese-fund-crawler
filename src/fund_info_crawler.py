@@ -35,8 +35,8 @@ class FundInfo:
         self.investname_style = None  # 投资风格
         self.manager = dict()  # 基金经理,name,id,管理时间
         self.three_month_retracement = 0.0  # 三个月最大回撤
-        self.bond_total_position = dict()  # 债券总仓位、前五大持仓
-        self.stock_total_position = dict()  # 股票总仓位、前十大持仓
+        self.bond_position = dict()  # 债券总仓位、前五大持仓
+        self.stock_position = dict()  # 股票总仓位、前十大持仓
         self.risk_assessment = dict()  # 标准差 风险系数 夏普比
         self.risk_statistics = dict()  # 阿尔法 贝塔 R平方值
         # 十大持仓信息
@@ -97,28 +97,48 @@ class FundInfo:
         try:
             text = self._chrome_driver.find_element_by_id(
                 parent_id).find_element_by_class_name(class_name).text
-            return text
+            return text if text != '-' else None
         except NoSuchElementException:
-            file_name = './abnormal/' + self.fund_code + "-no_such_element.png"
-            driver.save_screenshot(file_name)
+            print('error_fund_info:', self.fund_code,
+                  '-', self.morning_star_code, self.stock_position["stock_total_position"])
+            file_name = './abnormal/' + self.fund_code + \
+                '-' + parent_id + "-no_such_element.png"
+            self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
-            raise  # 抛出异常，注释后则不抛出异常
+            # raise  # 抛出异常，注释后则不抛出异常
+        return None
+
+    def get_element_text_by_id(self, id):
+        try:
+            text = self._chrome_driver.find_element_by_id(
+                id).text
+            return text if text != '-' else None
+        except NoSuchElementException:
+            print('error_fund_info:', self.fund_code,
+                  '-', self.morning_star_code, self.stock_position["stock_total_position"])
+            file_name = './abnormal/' + '-' + id + self.fund_code + "-no_such_element.png"
+            self._chrome_driver.save_screenshot(file_name)
+            # driver.get_screenshot_as_file(file_name)
+            # raise  # 抛出异常，注释后则不抛出异常
         return None
 
     def get_element_text_by_xpath(self, xpath, parent_id=None, parent_el=None):
         try:
             text = '-'
-            if parent_el != None:
-                text = self._chrome_driver.find_element_by_id(
-                    parent_id).find_element_by_xpath(xpath).text if parent_id != None else self._chrome_driver.find_element_by_xpath(xpath).text
+            if parent_el == None:
+                text = self._chrome_driver.find_element_by_xpath(xpath).text if parent_id == None else self._chrome_driver.find_element_by_id(
+                    parent_id).find_element_by_xpath(xpath).text
             else:
                 text = parent_el.find_element_by_xpath(xpath).text
-            return text
+            return text if text != '-' else None
         except NoSuchElementException:
-            file_name = './abnormal/' + self.fund_code + "-no_such_element.png"
-            driver.save_screenshot(file_name)
+            print('error_fund_info:', self.fund_code,
+                  '-', self.morning_star_code, self.stock_position["stock_total_position"])
+            file_name = './abnormal/' + \
+                self.fund_code + '-' + xpath + "-no_such_element.png"
+            self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
-            raise  # 抛出异常，注释后则不抛出异常
+            # raise  # 抛出异常，注释后则不抛出异常
         return None
 
     def get_fund_base_info(self):
@@ -151,10 +171,12 @@ class FundInfo:
             self.manager['start_date'] = manager_start_date
             self.manager['brife'] = manager_brife
         except NoSuchElementException:
-            file_name = './abnormal/' + self.fund_code + "-no_such_element.png"
-            driver.save_screenshot(file_name)
+            print('error_fund_info:', self.fund_code,
+                  '-', self.morning_star_code)
+            file_name = './abnormal/manager-' + self.fund_code + "-no_such_element.png"
+            self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
-            raise  # 抛出异常，注释后则不抛出异常
+            # raise  # 抛出异常，注释后则不抛出异常
         return None
 
     def get_fund_season_info(self):
@@ -168,50 +190,57 @@ class FundInfo:
         self.three_month_retracement = self.get_element_text_by_class_name(
             "r3", 'qt_worst')
         # 获取股票总仓位、前十大持仓、债券总仓位、前五大持仓
-        self.stock_total_position["stock_total_position"] = self.get_element_text_by_class_name(
+        self.stock_position["stock_total_position"] = self.get_element_text_by_class_name(
             "stock", 'qt_asset')
         # self.stock_total_position["stock_total_position"] = float(
         #     stock_total_position) / 100 if stock_total_position != '-' else None  # 股票的总仓位
-        self.bond_total_position["bond_total_position"] = self.get_element_text_by_class_name(
+        self.bond_position["bond_total_position"] = self.get_element_text_by_class_name(
             "stock", 'qt_asset')
 
-        stock_total_position = re.findall(
-            r"\d+\.?\d*", self._chrome_driver.find_element_by_id("qt_stocktab").text).pop(0)
-        self.stock_total_position["ten_stock_position"] = float(
-            stock_total_position) / 100 if stock_total_position != '-' else None  # 十大股票仓位
-        bond_total_position = re.findall(
-            r"\d+\.?\d*", self._chrome_driver.find_element_by_id("qt_bondstab").text).pop(0)
-        self.bond_total_position["five_bond_position"] = float(
-            bond_total_position) / 100 if bond_total_position != '-' else None  # 五大债券仓位
-        # 获取标准差
-        standard_deviation = self._chrome_driver.find_element_by_id(
-            "qt_risk").find_element_by_xpath('li[16]').text
-        self.risk_assessment["standard_deviation"] = float(
-            standard_deviation) if standard_deviation != '-' else None
-        # 获取风险系数
-        risk_coefficient = self._chrome_driver.find_element_by_id(
-            "qt_risk").find_element_by_xpath('li[23]').text
-        self.risk_assessment["risk_coefficient"] = float(
-            risk_coefficient) if risk_coefficient != '-' else None
-        # 获取夏普比
-        sharpby = self._chrome_driver.find_element_by_id(
-            "qt_risk").find_elements_by_xpath('li').pop(29).text
-        self.risk_assessment["sharpby"] = float(
-            sharpby) if sharpby != '-' else None
-        # 获取阿尔法
-        alpha = self._chrome_driver.find_element_by_id(
-            "qt_riskstats").find_elements_by_xpath('li').pop(4).text
+        # 十大股票仓位
+        ten_stock_position = None
+        ten_stock_position_text = self.get_element_text_by_id("qt_stocktab")
+        if ten_stock_position_text != None:
+            ten_stock_position = re.findall(
+                r"\d+\.?\d*", ten_stock_position_text).pop(0)
+        self.stock_position["ten_stock_position"] = ten_stock_position
 
-        self.risk_statistics["alpha"] = float(
-            alpha) if alpha != '-' else None
-        # 获取贝塔
-        beta = self._chrome_driver.find_element_by_id(
-            "qt_riskstats").find_elements_by_xpath('li').pop(7).text
-        self.risk_statistics["beta"] = float(
-            beta) if beta != '-' else None
-        # 获取R平方
-        r_square = self._chrome_driver.find_element_by_id(
-            "qt_riskstats").find_elements_by_xpath('li').pop(10).text
-        self.risk_statistics["r_square"] = float(
-            r_square) if r_square != '-' else None
-        return True
+        # 五大债券仓位
+        five_bond_position = None
+        five_bond_position_text = self.get_element_text_by_id("qt_bondstab")
+        if five_bond_position_text != None:
+            five_bond_position = re.findall(
+                r"\d+\.?\d*", five_bond_position_text).pop(0)
+        self.bond_position["five_bond_position"] = five_bond_position
+
+        # 获取标准差
+        # standard_deviation = self._chrome_driver.find_element_by_id(
+        #     "qt_risk").find_element_by_xpath('li[16]').text
+        standard_deviation = self.get_element_text_by_xpath(
+            'li[16]', 'qt_risk')
+        if standard_deviation != None:
+            self.risk_assessment["standard_deviation"] = standard_deviation
+            # 获取风险系数
+            risk_coefficient = self.get_element_text_by_xpath(
+                'li[23]', 'qt_risk')
+            self.risk_assessment["risk_coefficient"] = risk_coefficient
+            # 获取夏普比
+            sharpby = self.get_element_text_by_xpath(
+                'li[30]', 'qt_risk')
+            self.risk_assessment["sharpby"] = sharpby
+            # sharpby = self._chrome_driver.find_element_by_id(
+            #     "qt_risk").find_elements_by_xpath('li').pop(29).text
+            # self.risk_assessment["sharpby"] = float(
+            #     sharpby) if sharpby != '-' else None
+            # 获取阿尔法
+            alpha = self.get_element_text_by_xpath(
+                'li[5]', 'qt_riskstats')
+            self.risk_statistics["alpha"] = alpha
+            # 获取贝塔
+            beta = self.get_element_text_by_xpath(
+                'li[8]', 'qt_riskstats')
+            self.risk_statistics["beta"] = beta
+            # 获取R平方
+            r_square = self.get_element_text_by_xpath(
+                'li[11]', 'qt_riskstats')
+            self.risk_statistics["r_square"] = r_square

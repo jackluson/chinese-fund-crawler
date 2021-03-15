@@ -15,7 +15,7 @@ from utils import parse_cookiestr, set_cookies, login_site
 from selenium.common.exceptions import NoSuchElementException
 
 
-class FundInfo:
+class FundSpider:
     # 初始化定义，利用基金代码、基金名称进行唯一化
     def __init__(self, code, namecode, name,  chrome_driver, morning_cookies):
         self.season_number = '2021-1s'
@@ -25,6 +25,8 @@ class FundInfo:
 
         self._morning_cookies = morning_cookies or None
         self._chrome_driver = chrome_driver or None
+        self._is_trigger_catch = False
+        self._catch_detail = None
 
         # 基本信息
         self.fund_cat = None  # 基金分类
@@ -87,9 +89,9 @@ class FundInfo:
         # 判断是否页面出错，重定向，如果是的话跳过
         if self._chrome_driver.current_url == 'https://www.morningstar.cn/errors/defaulterror.html':
             return False
-        if self._chrome_driver.page_source == None:
+        while self._chrome_driver.page_source == None:
             self._chrome_driver.refresh()
-            print('fund_code', self.fund_code)
+            print('wait:fund_code', self.fund_code)
             sleep(9)
             # self._chrome_driver.execute_script('location.reload()')
 
@@ -99,6 +101,8 @@ class FundInfo:
                 parent_id).find_element_by_class_name(class_name).text
             return text if text != '-' else None
         except NoSuchElementException:
+            self._is_trigger_catch = True
+            self._catch_detail = parent_id + '-' + class_name
             print('error_fund_info:', self.fund_code,
                   '-', self.morning_star_code, self.stock_position["stock_total_position"])
             file_name = './abnormal/' + self.fund_code + \
@@ -114,6 +118,8 @@ class FundInfo:
                 id).text
             return text if text != '-' else None
         except NoSuchElementException:
+            self._is_trigger_catch = True
+            self._catch_detail = id
             print('error_fund_info:', self.fund_code,
                   '-', self.morning_star_code, self.stock_position["stock_total_position"])
             file_name = './abnormal/' + '-' + id + self.fund_code + "-no_such_element.png"
@@ -132,6 +138,8 @@ class FundInfo:
                 text = parent_el.find_element_by_xpath(xpath).text
             return text if text != '-' else None
         except NoSuchElementException:
+            self._is_trigger_catch = True
+            self._catch_detail = xpath
             print('error_fund_info:', self.fund_code,
                   '-', self.morning_star_code, self.stock_position["stock_total_position"])
             file_name = './abnormal/' + \
@@ -171,6 +179,7 @@ class FundInfo:
             self.manager['start_date'] = manager_start_date
             self.manager['brife'] = manager_brife
         except NoSuchElementException:
+            self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
                   '-', self.morning_star_code)
             file_name = './abnormal/manager-' + self.fund_code + "-no_such_element.png"
@@ -200,17 +209,21 @@ class FundInfo:
         # 十大股票仓位
         ten_stock_position = None
         ten_stock_position_text = self.get_element_text_by_id("qt_stocktab")
-        if ten_stock_position_text != None:
-            ten_stock_position = re.findall(
-                r"\d+\.?\d*", ten_stock_position_text).pop(0)
+        if ten_stock_position_text != None or ten_stock_position_text != '-':
+            ten_stock_position_list = re.findall(
+                r"\d+\.?\d*", ten_stock_position_text)
+            if len(ten_stock_position_list) > 0:
+                ten_stock_position = ten_stock_position_list.pop(0)
         self.stock_position["ten_stock_position"] = ten_stock_position
 
         # 五大债券仓位
         five_bond_position = None
         five_bond_position_text = self.get_element_text_by_id("qt_bondstab")
-        if five_bond_position_text != None:
-            five_bond_position = re.findall(
-                r"\d+\.?\d*", five_bond_position_text).pop(0)
+        if five_bond_position_text != None or five_bond_position_text != '-':
+            five_bond_position_list = re.findall(
+                r"\d+\.?\d*", five_bond_position_text)
+            if len(five_bond_position_list) > 0:
+                five_bond_position = five_bond_position_list.pop(0)
         self.bond_position["five_bond_position"] = five_bond_position
 
         # 获取标准差

@@ -10,7 +10,7 @@ Copyright (c) 2020 Camel Lu
 
 import math
 from utils import parse_cookiestr, set_cookies, login_site
-from fund_info_crawler import FundInfo
+from fund_info_crawler import FundSpider
 from lib.mysnowflake import IdWorker
 import pymysql
 connect = pymysql.connect(host='127.0.0.1', user='root',
@@ -56,7 +56,7 @@ if __name__ == '__main__':
             sql, [page_start, page_limit])    # 执行sql语句
         results = cursor.fetchall()    # 获取查询的所有记录
         for record in results:
-            each_fund = FundInfo(
+            each_fund = FundSpider(
                 record[0], record[1], record[2], chrome_driver, morning_cookies)
             # 从晨星网上更新信息
             is_normal = each_fund.go_fund_url()

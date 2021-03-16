@@ -16,6 +16,7 @@ from fund_info_crawler import FundSpider
 from lib.mysnowflake import IdWorker
 from time import sleep, time
 import pymysql
+import pandas
 connect = pymysql.connect(host='127.0.0.1', user='root',
                           password='rootroot', db='fund_work', charset='utf8')
 cursor = connect.cursor()
@@ -58,17 +59,24 @@ if __name__ == '__main__':
     page_start = 0
     error_funds = []
     output_catch_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
-        '类型' + '股票总仓位' + '页码' + '备注' + '\n'
+        '类型' + ',' + '股票总仓位' + ',' + '页码' + ',' + '备注' + '\n'
     # 设置表头
     result_dir = './output/'
+
     if page_start == 0:
         with open(result_dir + 'fund_morning_season_catch.csv', 'w+') as csv_file:
             csv_file.write(output_catch_head)
     output_catch_error = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
-        '类型' + '页码' + '备注' + '\n'
+        '类型' + ',' + '页码' + ',' + '备注' + '\n'
     if page_start == 0:
         with open(result_dir + 'fund_morning_season_error.csv', 'w+') as csv_file:
             csv_file.write(output_catch_error)
+    df = pandas.read_csv(
+        result_dir + 'fund_morning_season_error.csv', usecols=[0, 2, 4])
+    fund_list = df.values.tolist()
+    # print(len(d[d['代码'].astype(str).str.contains('10535')]))
+    # print(df[df['代码'].astype(str).str.contains('10535')]
+    #       ['股票总仓位'].values)
 
     def crawlData(start, end):
         chrome_driver = login()
@@ -103,19 +111,21 @@ if __name__ == '__main__':
                     lock.acquire()
                     error_funds.append(each_fund.fund_code)
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
-                                  each_fund.fund_name, each_fund.fund_cat, page_start, '页面跳转有问题']
+                                  each_fund.fund_name, record[3], page_start, '页面跳转有问题']
                     with open(result_dir + 'fund_morning_season_error.csv', 'a') as csv_file:
                         output_line = ', '.join(str(x)
                                                 for x in fund_infos) + '\n'
                         csv_file.write(output_line)
                     lock.release()
                     continue
-                each_fund.get_fund_manager_info()
-                each_fund.get_fund_season_info()
+                # each_fund.get_fund_manager_info()
+                each_fund.get_fund_morning_rating()
+                # each_fund.get_fund_season_info()
+                continue
                 if each_fund._is_trigger_catch == True:
                     lock.acquire()
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
-                                  each_fund.fund_name, each_fund.fund_cat,
+                                  each_fund.fund_name, record[3],
                                   each_fund.stock_position['stock_total_position'],
                                   page_start, each_fund._catch_detail]
                     with open(result_dir + 'fund_morning_season_catch.csv', 'a') as csv_file:
@@ -135,7 +145,7 @@ if __name__ == '__main__':
     threaders = []
     start = time()
     step_num = 2500
-    for i in range(3):
+    for i in range(1):
         print(i * step_num, (i+1) * step_num)
         t = Thread(target=crawlData, args=(
             i * step_num, (i+1) * step_num))

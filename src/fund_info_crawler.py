@@ -11,7 +11,7 @@ Copyright (c) 2020 Camel Lu
 import re
 from time import sleep
 from bs4 import BeautifulSoup
-from utils import parse_cookiestr, set_cookies, login_site
+from utils import parse_cookiestr, set_cookies, login_site, get_star_count
 from selenium.common.exceptions import NoSuchElementException
 
 
@@ -41,6 +41,8 @@ class FundSpider:
         self.stock_position = dict()  # 股票总仓位、前十大持仓
         self.risk_assessment = dict()  # 标准差 风险系数 夏普比
         self.risk_statistics = dict()  # 阿尔法 贝塔 R平方值
+        self.risk_rating = dict()  # 风险评价 -- 二年、三年、五年、十年
+        self.morning_star_rating = dict()  # 晨星评级--三年，五年，十年
         # 十大持仓信息
         self.ten_top_stock_list = []  # 股票十大持仓股信息
     # 处理基金详情页跳转
@@ -187,6 +189,64 @@ class FundSpider:
             # driver.get_screenshot_as_file(file_name)
             # raise  # 抛出异常，注释后则不抛出异常
         return None
+
+    def get_fund_morning_rating(self):
+        try:
+            qt_el = self._chrome_driver.find_element_by_id('qt_star')
+            rating_3_src = qt_el.find_element_by_xpath(
+                "//li[@class='star3']/img").get_attribute('src')
+            rating_5_src = qt_el.find_element_by_xpath(
+                "//li[@class='star5']/img").get_attribute('src')
+            rating_10_src = qt_el.find_element_by_xpath(
+                "//li[@class='star10']/img").get_attribute('src')
+            rating_3 = get_star_count(rating_3_src)
+            rating_5 = get_star_count(rating_5_src)
+            rating_10 = get_star_count(rating_10_src)
+            print(rating_3, rating_5, rating_10)
+            self.morning_star_rating[3] = rating_3
+            self.morning_star_rating[5] = rating_5
+            self.morning_star_rating[10] = rating_10
+            print(self.morning_star_rating)
+        except NoSuchElementException:
+            self._is_trigger_catch = True
+            print('error_fund_info:', self.fund_code,
+                  '-', self.morning_star_code)
+            file_name = './abnormal/morning_rating-' + \
+                self.fund_code + "-no_such_element.png"
+    # 风险评级
+
+    def get_fund_qt_rating(self):
+        try:
+            qt_el = self._chrome_driver.find_element_by_id('qt_rating')
+            rating_2_src = qt_el.find_element_by_xpath(
+                "//li[5]/img").get_attribute('src')
+            rating_3_src = qt_el.find_element_by_xpath(
+                "li[6]/img").get_attribute('src')
+            rating_5_src = qt_el.find_element_by_xpath(
+                "li[7]/img").get_attribute('src')
+            rating_10_src = qt_el.find_element_by_xpath(
+                "li[8]/img").get_attribute('src')
+            print(rating_3_src, rating_5_src, rating_10_src)
+            # //*[@id="qt_rating"]/li[6]/img
+            rating_2 = re.findall(
+                r"\d(?:stars\.gif)$", rating_2_src)[0][0]
+            rating_3 = re.findall(
+                r"\d(?:stars\.gif)$", rating_3_src)[0][0]
+            rating_5 = re.findall(
+                r"\d(?:stars\.gif)$", rating_5_src)[0][0]
+            rating_10 = re.findall(
+                r"\d(?:stars\.gif)$", rating_10_src)[0][0]
+            print(rating_2, rating_3, rating_5, rating_10)
+            self.risk_rating['2'] = rating_2
+            self.risk_rating['3'] = rating_3
+            self.risk_rating['5'] = rating_5
+            self.risk_rating['10'] = rating_10
+            print(self.risk_rating)
+        except NoSuchElementException:
+            self._is_trigger_catch = True
+            print('error_fund_info:', self.fund_code,
+                  '-', self.morning_star_code)
+            file_name = './abnormal/qt_rating-' + self.fund_code + "-no_such_element.png"
 
     def get_fund_season_info(self):
         # 投资风格

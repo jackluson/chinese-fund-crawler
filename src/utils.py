@@ -101,7 +101,7 @@ def login_site(chrome_driver, site_url, redirect_url=None):
     password = chrome_driver.find_element_by_id('pwdValue')
     check_code = chrome_driver.find_element_by_id('txtCheckCode')
     username.send_keys('18219112108@163.com')
-    password.send_keys('xxxx')
+    password.send_keys('w780880')
     count = 1
     flag = True
     while count < 10 and flag:
@@ -133,3 +133,21 @@ def login_site(chrome_driver, site_url, redirect_url=None):
     if count > 10:
         return False
     return True
+
+
+def parse_csv(datafile):
+    data = []
+    with open(datafile, "r") as f:
+        header = f.readline().split(",")  # 获取表头
+        counter = 0
+        for line in f:
+            if counter == 10:
+                break
+            fields = line.split(",")
+            entry = {}
+            for i, value in enumerate(fields):
+                entry[header[i].strip()] = value.strip()  # 用strip方法去除空白
+            data.append(entry)
+            counter += 1
+
+    return data

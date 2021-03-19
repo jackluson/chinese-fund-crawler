@@ -36,10 +36,13 @@ class FundSpider:
         self.total_asset = None  # 总资产
         self.investname_style = None  # 投资风格
         self.manager = dict()  # 基金经理,name,id,管理时间
-        self.three_month_retracement = 0.0  # 三个月最大回撤
-        self.bond_position = dict()  # 债券总仓位、前五大持仓
-        self.stock_position = dict()  # 股票总仓位、前十大持仓
-        self.risk_assessment = dict()  # 标准差 风险系数 夏普比
+        self.three_month_retracement = 0.0  # 最差六个月回报
+        self.june_month_retracement = 0.0  # 最差六个月回报
+        self.bond_position = dict(
+            {'total': '0.00'})  # 债券总仓位、前五大持仓
+        self.stock_position = dict(
+            {'total': '0.00'})  # 股票总仓位、前十大持仓
+        self.risk_assessment = dict()  # 三年风险评估 -- 标准差 风险系数 夏普比
         self.risk_statistics = dict()  # 阿尔法 贝塔 R平方值
         self.risk_rating = dict()  # 风险评价 -- 二年、三年、五年、十年
         self.morning_star_rating = dict()  # 晨星评级--三年，五年，十年
@@ -106,10 +109,10 @@ class FundSpider:
             self._is_trigger_catch = True
             self._catch_detail = parent_id + '-' + class_name
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, self.stock_position["stock_total_position"])
+                  '-', self.morning_star_code, self.stock_position["total"])
             file_name = './abnormal/' + self.fund_code + \
                 '-' + parent_id + "-no_such_element.png"
-            self._chrome_driver.save_screenshot(file_name)
+            # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
             # raise  # 抛出异常，注释后则不抛出异常
         return None
@@ -123,9 +126,9 @@ class FundSpider:
             self._is_trigger_catch = True
             self._catch_detail = id
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, self.stock_position["stock_total_position"])
+                  '-', self.morning_star_code, self.stock_position["total"])
             file_name = './abnormal/' + '-' + id + self.fund_code + "-no_such_element.png"
-            self._chrome_driver.save_screenshot(file_name)
+            # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
             # raise  # 抛出异常，注释后则不抛出异常
         return None
@@ -143,10 +146,10 @@ class FundSpider:
             self._is_trigger_catch = True
             self._catch_detail = xpath
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, self.stock_position["stock_total_position"])
+                  '-', self.morning_star_code, self.stock_position["total"])
             file_name = './abnormal/' + \
                 self.fund_code + '-' + xpath + "-no_such_element.png"
-            self._chrome_driver.save_screenshot(file_name)
+            # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
             # raise  # 抛出异常，注释后则不抛出异常
         return None
@@ -185,7 +188,7 @@ class FundSpider:
             print('error_fund_info:', self.fund_code,
                   '-', self.morning_star_code)
             file_name = './abnormal/manager-' + self.fund_code + "-no_such_element.png"
-            self._chrome_driver.save_screenshot(file_name)
+            # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
             # raise  # 抛出异常，注释后则不抛出异常
         return None
@@ -202,11 +205,9 @@ class FundSpider:
             rating_3 = get_star_count(rating_3_src)
             rating_5 = get_star_count(rating_5_src)
             rating_10 = get_star_count(rating_10_src)
-            print(rating_3, rating_5, rating_10)
             self.morning_star_rating[3] = rating_3
             self.morning_star_rating[5] = rating_5
             self.morning_star_rating[10] = rating_10
-            print(self.morning_star_rating)
         except NoSuchElementException:
             self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
@@ -226,7 +227,6 @@ class FundSpider:
                 "li[7]/img").get_attribute('src')
             rating_10_src = qt_el.find_element_by_xpath(
                 "li[8]/img").get_attribute('src')
-            print(rating_3_src, rating_5_src, rating_10_src)
             # //*[@id="qt_rating"]/li[6]/img
             rating_2 = re.findall(
                 r"\d(?:stars\.gif)$", rating_2_src)[0][0]
@@ -236,12 +236,10 @@ class FundSpider:
                 r"\d(?:stars\.gif)$", rating_5_src)[0][0]
             rating_10 = re.findall(
                 r"\d(?:stars\.gif)$", rating_10_src)[0][0]
-            print(rating_2, rating_3, rating_5, rating_10)
-            self.risk_rating['2'] = rating_2
-            self.risk_rating['3'] = rating_3
-            self.risk_rating['5'] = rating_5
-            self.risk_rating['10'] = rating_10
-            print(self.risk_rating)
+            self.risk_rating[2] = rating_2
+            self.risk_rating[3] = rating_3
+            self.risk_rating[5] = rating_5
+            self.risk_rating[10] = rating_10
         except NoSuchElementException:
             self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
@@ -249,22 +247,26 @@ class FundSpider:
             file_name = './abnormal/qt_rating-' + self.fund_code + "-no_such_element.png"
 
     def get_fund_season_info(self):
-        # 投资风格
-        self.investname_style = self.get_element_text_by_class_name(
-            'sbdesc', 'qt_base')
         # 总资产
         self.total_asset = self.get_element_text_by_class_name(
             "asset", 'qt_base')
-        # 三位最大回撤
+        # 投资风格
+        self.investname_style = self.get_element_text_by_class_name(
+            'sbdesc', 'qt_base')
+        # 最差三个月回报
         self.three_month_retracement = self.get_element_text_by_class_name(
             "r3", 'qt_worst')
+        # 最差六个月回报
+        self.june_month_retracement = self.get_element_text_by_class_name(
+            "r6", 'qt_worst')
         # 获取股票总仓位、前十大持仓、债券总仓位、前五大持仓
-        self.stock_position["stock_total_position"] = self.get_element_text_by_class_name(
+        total = self.get_element_text_by_class_name(
             "stock", 'qt_asset')
-        # self.stock_total_position["stock_total_position"] = float(
-        #     stock_total_position) / 100 if stock_total_position != '-' else None  # 股票的总仓位
-        self.bond_position["bond_total_position"] = self.get_element_text_by_class_name(
-            "stock", 'qt_asset')
+        self.stock_position["total"] = total if total != None else '0.00'
+        # self.total["total"] = float(
+        #     total) / 100 if total != '-' else None  # 股票的总仓位
+        self.bond_position["total"] = self.get_element_text_by_class_name(
+            "bonds", 'qt_asset')
 
         # 十大股票仓位
         ten_stock_position = None
@@ -274,7 +276,7 @@ class FundSpider:
                 r"\d+\.?\d*", ten_stock_position_text)
             if len(ten_stock_position_list) > 0:
                 ten_stock_position = ten_stock_position_list.pop(0)
-        self.stock_position["ten_stock_position"] = ten_stock_position
+        self.stock_position["ten"] = ten_stock_position
 
         # 五大债券仓位
         five_bond_position = None
@@ -284,7 +286,7 @@ class FundSpider:
                 r"\d+\.?\d*", five_bond_position_text)
             if len(five_bond_position_list) > 0:
                 five_bond_position = five_bond_position_list.pop(0)
-        self.bond_position["five_bond_position"] = five_bond_position
+        self.bond_position["five"] = five_bond_position
 
         # 获取标准差
         # standard_deviation = self._chrome_driver.find_element_by_id(
@@ -301,10 +303,6 @@ class FundSpider:
             sharpby = self.get_element_text_by_xpath(
                 'li[30]', 'qt_risk')
             self.risk_assessment["sharpby"] = sharpby
-            # sharpby = self._chrome_driver.find_element_by_id(
-            #     "qt_risk").find_elements_by_xpath('li').pop(29).text
-            # self.risk_assessment["sharpby"] = float(
-            #     sharpby) if sharpby != '-' else None
             # 获取阿尔法
             alpha = self.get_element_text_by_xpath(
                 'li[5]', 'qt_riskstats')
@@ -317,3 +315,20 @@ class FundSpider:
             r_square = self.get_element_text_by_xpath(
                 'li[11]', 'qt_riskstats')
             self.risk_statistics["r_square"] = r_square
+    # 获取持仓
+
+    def get_asset_composition_info(self):
+        # 判断是否含有股票持仓
+        li_elements = self._chrome_driver.find_element_by_id(
+            'qt_stock').find_elements_by_xpath("li")
+        for index in range(4, len(li_elements) - 1, 4):
+            temp_stock_info = dict()  # 一只股票信息
+            stock_base = li_elements[index].text.split('.')
+            temp_stock_info['stock_code'] = stock_base[0]
+            temp_stock_info['stock_market'] = None if len(
+                stock_base) == 1 else stock_base.pop()
+            temp_stock_info['stock_name'] = li_elements[index+1].text
+            # temp_stock_info['stock_value'] = li_elements[index+2].text
+            temp_stock_info['stock_portion'] = li_elements[index +
+                                                           3].text if li_elements[index+3].text != '-' else None
+            self.ten_top_stock_list.append(temp_stock_info)

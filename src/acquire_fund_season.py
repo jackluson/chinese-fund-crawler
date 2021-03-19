@@ -15,6 +15,7 @@ from utils import parse_cookiestr, set_cookies, login_site
 from fund_info_crawler import FundSpider
 from lib.mysnowflake import IdWorker
 from time import sleep, time
+from pprint import pprint
 import pymysql
 import pandas
 connect = pymysql.connect(host='127.0.0.1', user='root',
@@ -40,6 +41,23 @@ def login():
         print('login fail')
         exit()
     return chrome_driver
+
+
+def generate_insert_sql(target_dict, table_name, ignore_list):
+    keys = ','.join(target_dict.keys())
+    values = ','.join(['%s'] * len(target_dict))
+    update_values = ''
+    for key in target_dict.keys():
+        if key in ignore_list:
+            continue
+        update_values = update_values + '{0}=VALUES({0}),'.format(key)
+    sql_insert = "INSERT INTO {table} ({keys}) VALUES ({values})  ON DUPLICATE KEY UPDATE {update_values}; ".format(
+        table=table_name,
+        keys=keys,
+        values=values,
+        update_values=update_values[0:-1]
+    )
+    return sql_insert
 
 
 if __name__ == '__main__':
@@ -81,21 +99,19 @@ if __name__ == '__main__':
     def crawlData(start, end):
         chrome_driver = login()
         morning_cookies = chrome_driver.get_cookies()
-        print('end', end)
         page_start = start
         page_limit = 10
         while(page_start < end):
-            sql = "SELECT fund_morning_base.fund_code,\
-            fund_morning_base.morning_star_code, fund_morning_base.fund_name, fund_morning_base.fund_cat, \
-            fund_morning_snapshot.fund_rating_3,fund_morning_snapshot.fund_rating_5 \
-            FROM fund_morning_base \
-            LEFT JOIN fund_morning_snapshot ON fund_morning_snapshot.fund_code = fund_morning_base.fund_code \
-            WHERE fund_morning_base.fund_cat NOT LIKE '%%货币%%' \
-            AND fund_morning_base.fund_cat NOT LIKE '%%纯债基金%%' \
-            AND fund_morning_base.fund_cat NOT LIKE '目标日期' \
-            AND fund_morning_base.fund_cat NOT LIKE '%%短债基金%%' \
-            ORDER BY fund_morning_snapshot.fund_rating_5 DESC,fund_morning_snapshot.fund_rating_3 DESC, \
-            fund_morning_base.fund_cat, fund_morning_base.fund_code LIMIT %s, %s"
+            sql = "SELECT t.fund_code,\
+            t.morning_star_code, t.fund_name, t.fund_cat \
+            FROM fund_morning_base as t \
+            LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
+            WHERE t.fund_cat NOT LIKE '%%货币%%' \
+            AND t.fund_cat NOT LIKE '%%纯债基金%%' \
+            AND t.fund_cat NOT LIKE '目标日期' \
+            AND t.fund_cat NOT LIKE '%%短债基金%%' \
+            ORDER BY f.fund_rating_5 DESC,f.fund_rating_3 DESC, \
+            t.fund_cat, t.fund_code LIMIT %s, %s"
             lock.acquire()
             cursor.execute(
                 sql, [page_start, page_limit])    # 执行sql语句
@@ -118,26 +134,108 @@ if __name__ == '__main__':
                         csv_file.write(output_line)
                     lock.release()
                     continue
-                # each_fund.get_fund_manager_info()
-                each_fund.get_fund_morning_rating()
-                # each_fund.get_fund_season_info()
-                continue
+                # 开始爬取数据
+                each_fund.get_fund_season_info()  # 基本数据
+                each_fund.get_fund_manager_info()  # 基金经理模块
+                each_fund.get_fund_morning_rating()  # 基金晨星评级
+                each_fund.get_fund_qt_rating()  # 基金风险评级
+                if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
+                    each_fund.get_asset_composition_info()
                 if each_fund._is_trigger_catch == True:
                     lock.acquire()
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
                                   each_fund.fund_name, record[3],
-                                  each_fund.stock_position['stock_total_position'],
+                                  each_fund.stock_position['total'],
                                   page_start, each_fund._catch_detail]
                     with open(result_dir + 'fund_morning_season_catch.csv', 'a') as csv_file:
                         output_line = ', '.join(str(x)
                                                 for x in fund_infos) + '\n'
                         csv_file.write(output_line)
                     lock.release()
-                fundDict = dict((name, getattr(each_fund, name))
-                                for name in vars(each_fund)
-                                if not (name.startswith('_') or getattr(each_fund, name) == None))
-
-                # print(current_thread().getName(), fundDict)
+                # 入库
+                lock.acquire()
+                snow_flake_id = IdWorker.get_id()
+                lock.release()
+                # 基金经理
+                if each_fund.manager.get('id'):
+                    manager_dict = {
+                        'id': snow_flake_id,
+                        'manager_id': each_fund.manager.get('id'),
+                        'name': each_fund.manager.get('name'),
+                        'brife': each_fund.manager.get('brife')
+                    }
+                    manager_sql_insert = generate_insert_sql(
+                        manager_dict, 'fund_morning_manager', ['id', 'manager_id', 'name'])
+                    lock.acquire()
+                    cursor.execute(manager_sql_insert,
+                                   tuple(manager_dict.values()))
+                    connect.commit()
+                    lock.release()
+                season_dict = {
+                    'id': snow_flake_id,
+                    'season_number': each_fund.season_number,
+                    'fund_code': each_fund.fund_code,
+                    'investname_style': each_fund.investname_style,
+                    'total_asset': each_fund.total_asset,
+                    'manager_id': each_fund.manager.get('id'),
+                    'manager_start_date': each_fund.manager.get('start_date'),
+                    'three_month_retracement': each_fund.three_month_retracement,
+                    'june_month_retracement': each_fund.june_month_retracement,
+                    'risk_statistics_alpha': each_fund.risk_statistics.get('alpha'),
+                    'risk_statistics_beta': each_fund.risk_statistics.get('beta'),
+                    'risk_statistics_r_square': each_fund.risk_statistics.get('r_square'),
+                    'risk_assessment_standard_deviation': each_fund.risk_assessment.get('standard_deviation'),
+                    'risk_assessment_risk_coefficient': each_fund.risk_assessment.get('risk_coefficient'),
+                    'risk_assessment_sharpby': each_fund.risk_assessment.get('sharpby'),
+                    'risk_rating_2': each_fund.risk_rating.get(2),
+                    'risk_rating_3': each_fund.risk_rating.get(3),
+                    'risk_rating_5': each_fund.risk_rating.get(5),
+                    'risk_rating_10': each_fund.risk_rating.get(10),
+                    'stock_position_total': each_fund.stock_position.get('total'),
+                    'stock_position_ten': each_fund.stock_position.get('ten'),
+                    'bond_position_total': each_fund.bond_position.get('total'),
+                    'bond_position_five': each_fund.bond_position.get('five'),
+                    'morning_star_rating_3': each_fund.morning_star_rating.get(3),
+                    'morning_star_rating_5': each_fund.morning_star_rating.get(5),
+                    'morning_star_rating_10': each_fund.morning_star_rating.get(10),
+                }
+                season_sql_insert = generate_insert_sql(
+                    season_dict, 'fund_morning_season', ['id', 'season_number', 'fund_code'])
+                lock.acquire()
+                cursor.execute(season_sql_insert,
+                               tuple(season_dict.values()))
+                connect.commit()
+                lock.release()
+                # 入库十大股票持仓
+                stock_position_total = each_fund.stock_position.get(
+                    'total', '0.00')
+                if float(stock_position_total) > 0:
+                    stock_dict = {
+                        'id': snow_flake_id,
+                        'season_number': each_fund.season_number,
+                        'fund_code': each_fund.fund_code,
+                        'stock_position_total': each_fund.stock_position.get('total'),
+                    }
+                    for index in range(len(each_fund.ten_top_stock_list)):
+                        temp_stock = each_fund.ten_top_stock_list[index]
+                        prefix = 'top_stock_' + str(index) + '_'
+                        code_key = prefix + 'code'
+                        stock_dict[code_key] = temp_stock['stock_code']
+                        name_key = prefix + 'name'
+                        stock_dict[name_key] = temp_stock['stock_name']
+                        portion_key = prefix + 'portion'
+                        stock_dict[portion_key] = temp_stock['stock_portion']
+                        market_key = prefix + 'market'
+                        stock_dict[market_key] = temp_stock['stock_market']
+                    stock_sql_insert = generate_insert_sql(
+                        stock_dict, 'fund_morning_stock_info', ['id', 'season_number', 'fund_code'])
+                    lock.acquire()
+                    # print('stock_sql_insert', stock_sql_insert)
+                    cursor.execute(stock_sql_insert,
+                                   tuple(stock_dict.values()))
+                    connect.commit()
+                    lock.release()
+                # pprint(fundDict)
             page_start = page_start + page_limit
             print(current_thread().getName(), 'page_start', page_start)
             sleep(3)
@@ -145,10 +243,27 @@ if __name__ == '__main__':
     threaders = []
     start = time()
     step_num = 2500
-    for i in range(1):
-        print(i * step_num, (i+1) * step_num)
-        t = Thread(target=crawlData, args=(
-            i * step_num, (i+1) * step_num))
+    # steps = [{
+    #     "start": 800,
+    #     "end": 2500
+    # }, {
+    #     "start": 2740,
+    #     "end": 5000
+    # }, {
+    #     "start": 5100,
+    #     "end": 7500
+    # }, {
+    #     "start": 8300,
+    #     "end": record_total
+    # }]
+    for i in range(4):
+        skip_num = 100
+        # print(i * step_num + skip_num, (i+1) * step_num)
+        # start = steps[i]['start']
+        # end = steps[i]['end']
+        start = i * step_num
+        end = (i + 1) * step_num
+        t = Thread(target=crawlData, args=(start, end))
         t.setDaemon(True)
         threaders.append(t)
         t.start()

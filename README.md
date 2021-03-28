@@ -35,7 +35,7 @@
 #### 5. 晨星基金经理
 
 > 爬取基金详情页的数据，据此爬取基金经理数据
-<img src="./screenshot/fund_manager.png" style="zoom:50%;" />
+> <img src="./screenshot/fund_manager.png" style="zoom:50%;" />
 
 ### 技术点
 
@@ -64,4 +64,12 @@
 4. 如何保证循环当前页与浏览器当前页一致
 5. 多线程爬取时，线程锁
 
-以上问题，我都做了相对应的处理，如果有问题的话，欢迎提 issue，私聊，star。
+以上问题，我都做了相对应的处理。
+
+### 数据汇总
+
+基于上面的数据，简单做了如下数据汇总，统计股票在这些基金中出现的频率，可用于投资理财辅助，如图：
+
+<img src="./screenshot/fund_statistic.png" />
+
+如果有问题，有兴趣的话，欢迎提 issue，私聊，star。

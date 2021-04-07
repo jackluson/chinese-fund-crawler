@@ -18,7 +18,7 @@ from selenium.common.exceptions import NoSuchElementException
 class FundSpider:
     # 初始化定义，利用基金代码、基金名称进行唯一化
     def __init__(self, code, namecode, name,  chrome_driver, morning_cookies):
-        self.season_number = '2021-s1'
+        self.season_number = '2021-s1'  # TODO: get season_number by current time
         self.fund_code = code  # 基金代码，需要初始化赋值
         self.fund_name = name  # 基金名称，需要初始化赋值
         self.morning_star_code = namecode  # 基金编码，晨星网特有，需要建立索引表
@@ -247,7 +247,7 @@ class FundSpider:
             file_name = './abnormal/qt_rating-' + self.fund_code + "-no_such_element.png"
 
     def get_fund_season_info(self):
-        # 总资产
+        # 总资产  TODO: 增加一个数据更新时间field
         self.total_asset = self.get_element_text_by_class_name(
             "asset", 'qt_base')
         # 投资风格
@@ -259,7 +259,7 @@ class FundSpider:
         # 最差六个月回报
         self.june_month_retracement = self.get_element_text_by_class_name(
             "r6", 'qt_worst')
-        # 获取股票总仓位、前十大持仓、债券总仓位、前五大持仓
+        # 获取股票总仓位、前十大持仓、债券总仓位、前五大持仓 TODO: 增加一个数据更新时间field
         total = self.get_element_text_by_class_name(
             "stock", 'qt_asset')
         self.stock_position["total"] = total if total != None else '0.00'
@@ -291,6 +291,7 @@ class FundSpider:
         # 获取标准差
         # standard_deviation = self._chrome_driver.find_element_by_id(
         #     "qt_risk").find_element_by_xpath('li[16]').text
+        #  TODO: 增加一个数据更新时间field
         standard_deviation = self.get_element_text_by_xpath(
             'li[16]', 'qt_risk')
         if standard_deviation != None:

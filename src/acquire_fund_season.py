@@ -19,7 +19,7 @@ from pprint import pprint
 import pymysql
 import pandas
 connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='rootroot', db='fund_work', charset='utf8')
+                          password='xxxxx', db='fund_work', charset='utf8')
 cursor = connect.cursor()
 lock = Lock()
 
@@ -123,6 +123,7 @@ if __name__ == '__main__':
                 each_fund = FundSpider(
                     record[0], record[1], record[2], chrome_driver, morning_cookies)
                 is_normal = each_fund.go_fund_url()
+                # 是否能正常跳转到基金详情页，没有的话，写入csv,退出当前循环
                 if is_normal == False:
                     lock.acquire()
                     error_funds.append(each_fund.fund_code)
@@ -139,8 +140,10 @@ if __name__ == '__main__':
                 each_fund.get_fund_manager_info()  # 基金经理模块
                 each_fund.get_fund_morning_rating()  # 基金晨星评级
                 each_fund.get_fund_qt_rating()  # 基金风险评级
+                # 判断是否有股票持仓，有则爬取
                 if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
                     each_fund.get_asset_composition_info()
+                # 爬取过程中是否有异常
                 if each_fund._is_trigger_catch == True:
                     lock.acquire()
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
@@ -171,6 +174,7 @@ if __name__ == '__main__':
                                    tuple(manager_dict.values()))
                     connect.commit()
                     lock.release()
+                # 季度信息  TODO: 对比数据更新时间field
                 season_dict = {
                     'id': snow_flake_id,
                     'season_number': each_fund.season_number,

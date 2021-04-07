@@ -6,6 +6,7 @@ code-record/*
 *$py.class
 .vscode/
 *fund_morning_star.csv
+abnormal
 
 
 # C extensions

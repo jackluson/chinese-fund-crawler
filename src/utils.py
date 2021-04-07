@@ -1,6 +1,7 @@
 
 from urllib import parse
 import time
+import datetime
 import os
 
 
@@ -151,3 +152,20 @@ def parse_csv(datafile):
             counter += 1
 
     return data
+
+
+def get_season_index(input_date):
+    year = time.strftime("%Y", time.localtime())
+    boundary_date_list = ['03-31', '06-30', '09-30', '12-31']
+
+    input_date_strptime = datetime.datetime.strptime(
+        year + '-' + input_date, '%Y-%m-%d')
+    index = 1
+    for idx in range(len(boundary_date_list)):
+        join_date = year + '-' + boundary_date_list[idx]
+        season_date_strptime = datetime.datetime.strptime(
+            join_date, '%Y-%m-%d')
+        if input_date_strptime <= season_date_strptime:
+            index = idx + 1
+            break
+    return index

@@ -4,6 +4,10 @@ import time
 import datetime
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 def parse_cookiestr(cookie_str, split_str="; "):
     cookielist = []
@@ -101,8 +105,10 @@ def login_site(chrome_driver, site_url, redirect_url=None):
     username = chrome_driver.find_element_by_id('emailTxt')
     password = chrome_driver.find_element_by_id('pwdValue')
     check_code = chrome_driver.find_element_by_id('txtCheckCode')
-    username.send_keys('18219112108@163.com')
-    password.send_keys('xxxx')
+    env_username = os.getenv('morning_star_username')
+    env_password = os.getenv('morning_star_password')
+    username.send_keys(env_username)
+    password.send_keys(env_password)
     count = 1
     flag = True
     while count < 10 and flag:

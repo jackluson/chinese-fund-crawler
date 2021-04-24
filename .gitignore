@@ -7,7 +7,8 @@ code-record/*
 .vscode/
 *fund_morning_star.csv
 abnormal
-
+demo/
+.env
 
 # C extensions
 *.so

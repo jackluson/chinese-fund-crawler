@@ -36,22 +36,14 @@ def text_to_be_present_in_element(locator, text, next_page_locator):
     def _predicate(driver):
         try:
             element_text = driver.find_element_by_xpath(locator).text
-            # 比给定的页码小的话，触发下一页
-            if int(element_text) < int(text):
-                print(element_text, text)
-                next_page = driver.find_element_by_xpath(
-                    next_page_locator)
-                # driver.refresh()
-                next_page.click()
+            if int(element_text) != int(text):
+                # 跳转指定的js执行代码
+                js_content = "javascript:__doPostBack('ctl00$cphMain$AspNetPager1','{}')".format(
+                    text)
+                execute_return = driver.execute_script(js_content)
+                print('execute_return', execute_return)
                 sleep(5)
-                # 比给定的页码大的话，触发上一页
-            elif int(element_text) > int(text):
-                print(element_text, text)
-                prev_page = driver.find_element_by_xpath(
-                    '/html/body/form/div[8]/div/div[4]/div[3]/div[3]/div[1]/a[2]')
-                # driver.refresh()
-                prev_page.click()
-                sleep(5)
+
             return text == element_text
         except:
             return False
@@ -183,6 +175,7 @@ def get_fund_list(cookie_str=None):
             xpath_str)
         # 点击下一页
         next_page.click()
+        sleep(3)
         page_num += 1
     chrome_driver.close()
     print('end')

@@ -11,16 +11,14 @@ Copyright (c) 2020 Camel Lu
 import re
 import math
 import os
-import pymysql
 from time import sleep
 from bs4 import BeautifulSoup
 import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
 from lib.mysnowflake import IdWorker
 from utils import parse_cookiestr, set_cookies, login_site, get_star_count
+from db.connect import connect
 
-connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='rootroot', db='fund_work', charset='utf8')
 cursor = connect.cursor()
 
 '''
@@ -83,7 +81,7 @@ def get_fund_list(cookie_str=None):
             chrome_driver.get(morning_fund_selector_url)  # 再次打开爬取页面
             print(chrome_driver.get_cookies())  # 打印设置成功的cookie
     # 定义起始页码
-    page_num = 1
+    page_num = 445
     page_count = 25
     page_num_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
@@ -158,8 +156,8 @@ def get_fund_list(cookie_str=None):
         fund_df = pd.DataFrame({'id': id_list, 'fund_code': code_list, 'morning_star_code': morning_star_code_list, 'fund_name': name_list, 'fund_cat': fund_cat,
                                 'fund_rating_3': fund_rating_3, 'fund_rating_5': fund_rating_5, 'rate_of_return': rate_of_return})
         env_snapshot_table_name = os.getenv('snapshot_table_name')
-        sql_insert = "replace into " + env_snapshot_table_name + \
-            "(`id`, `fund_code`,`morning_star_code`, `fund_name`, `fund_cat`, `fund_rating_3`, `fund_rating_5`, `rate_of_return`) values(%s, %s, %s, %s, %s, %s, %s, %s)"
+        sql_insert = "INSERT INTO " + env_snapshot_table_name + \
+            "(`id`, `fund_code`,`morning_star_code`, `fund_name`, `fund_cat`, `fund_rating_3`, `fund_rating_5`, `rate_of_return`) VALUES(%s, %s, %s, %s, %s, %s, %s, %s) ON DUPLICATE KEY UPDATE fund_rating_3=VALUES(fund_rating_3), fund_rating_5=VALUES(fund_rating_5), rate_of_return=VALUES(rate_of_return);"
         # print('fund_df', fund_df)
         fund_list = fund_df.values.tolist()
         cursor.executemany(sql_insert, fund_list)

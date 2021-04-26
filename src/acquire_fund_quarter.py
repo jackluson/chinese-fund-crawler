@@ -13,13 +13,12 @@ import math
 from threading import Thread, Lock, current_thread
 from utils import parse_cookiestr, set_cookies, login_site
 from fund_info_crawler import FundSpider
+from db.connect import connect
 from lib.mysnowflake import IdWorker
 from time import sleep, time
 from pprint import pprint
-import pymysql
 import pandas
-connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='xxxxx', db='fund_work', charset='utf8')
+
 cursor = connect.cursor()
 lock = Lock()
 
@@ -177,7 +176,7 @@ if __name__ == '__main__':
                 # 季度信息  TODO: 对比数据更新时间field
                 season_dict = {
                     'id': snow_flake_id,
-                    'season_number': each_fund.season_number,
+                    'quarter_index': each_fund.quarter_index,
                     'fund_code': each_fund.fund_code,
                     'investname_style': each_fund.investname_style,
                     'total_asset': each_fund.total_asset,
@@ -204,7 +203,7 @@ if __name__ == '__main__':
                     'morning_star_rating_10': each_fund.morning_star_rating.get(10),
                 }
                 season_sql_insert = generate_insert_sql(
-                    season_dict, 'fund_morning_season', ['id', 'season_number', 'fund_code'])
+                    season_dict, 'fund_morning_season', ['id', 'quarter_index', 'fund_code'])
                 lock.acquire()
                 cursor.execute(season_sql_insert,
                                tuple(season_dict.values()))
@@ -216,7 +215,7 @@ if __name__ == '__main__':
                 if float(stock_position_total) > 0:
                     stock_dict = {
                         'id': snow_flake_id,
-                        'season_number': each_fund.season_number,
+                        'quarter_index': each_fund.quarter_index,
                         'fund_code': each_fund.fund_code,
                         'stock_position_total': each_fund.stock_position.get('total'),
                     }
@@ -232,7 +231,7 @@ if __name__ == '__main__':
                         market_key = prefix + 'market'
                         stock_dict[market_key] = temp_stock['stock_market']
                     stock_sql_insert = generate_insert_sql(
-                        stock_dict, 'fund_morning_stock_info', ['id', 'season_number', 'fund_code'])
+                        stock_dict, 'fund_morning_stock_info', ['id', 'quarter_index', 'fund_code'])
                     lock.acquire()
                     # print('stock_sql_insert', stock_sql_insert)
                     cursor.execute(stock_sql_insert,

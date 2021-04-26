@@ -18,7 +18,7 @@ from selenium.common.exceptions import NoSuchElementException
 class FundSpider:
     # 初始化定义，利用基金代码、基金名称进行唯一化
     def __init__(self, code, namecode, name,  chrome_driver, morning_cookies):
-        self.season_number = '2021-s1'  # TODO: get season_number by current time
+        self.quarter_index = '2021-q1'  # TODO: get quarter_index by current time
         self.fund_code = code  # 基金代码，需要初始化赋值
         self.fund_name = name  # 基金名称，需要初始化赋值
         self.morning_star_code = namecode  # 基金编码，晨星网特有，需要建立索引表

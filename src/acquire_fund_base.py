@@ -13,8 +13,8 @@ from utils import parse_cookiestr, set_cookies, login_site
 from fund_info_crawler import FundSpider
 from lib.mysnowflake import IdWorker
 import pymysql
-connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='rootroot', db='fund_work', charset='utf8')
+from db.connect import connect
+
 cursor = connect.cursor()
 
 

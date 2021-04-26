@@ -11,12 +11,10 @@ Copyright (c) 2020 Camel Lu
 
 import pymysql
 from pprint import pprint
-connect = pymysql.connect(host='127.0.0.1', user='root',
-                          password='xxx', db='fund_work', charset='utf8')
-cursor = connect.cursor()
+from db.connect import connect
 
+cursor = connect.cursor()
 if __name__ == '__main__':
-    print('login')
     page_start = 0
     page_limit = 10000
     stock_sql_join = ''
@@ -28,7 +26,7 @@ if __name__ == '__main__':
     stock_sql_join = stock_sql_join[0:-1]
     # print(stock_sql_join)
     sql_query_season = "SELECT t.fund_code," + stock_sql_join + \
-        " FROM fund_morning_stock_info as t WHERE t.season_number = '2021-s1' AND t.stock_position_total > 20 LIMIT %s, %s ;"
+        " FROM fund_morning_stock_info as t WHERE t.quarter_index = '2020-q4' AND t.stock_position_total > 20 LIMIT %s, %s ;"
     cursor.execute(sql_query_season, [page_start, page_limit])    # 执行sql语句
     results = cursor.fetchall()    # 获取查询的所有记录
     # pprint(results)

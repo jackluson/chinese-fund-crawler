@@ -65,11 +65,13 @@
 1. `selenium` 模拟登录：
    - 可采用验证码识别方式
    - 设置已经登录好的账号 cookies
-2. 利用`BeautifulSoup` 解析 html，提取当前页的基金列表信息，存入到 mysql 中，或者追加到 csv 中
+2. 利用`BeautifulSoup` 解析 html，提取当前页的基金列表信息，存入到 mysql 中，或者追加到 csv 中 （目前仅 acquire_fund_snapshot.py 支持导出 csv）
 3. `selenium` 模拟切换分页，重复第二，第三步
 4. 所有的页数据爬取完，退出浏览器
 
 ## 本地运行
+
+> 本地前置条件： 安装好 chromedriver 驱动， 安装 tesseract 并将 tesseract 加到环境变量下(识别二维码需要，如果是设置 cookies 方式则不需要)，如果是需要连接数据库的话，还要配置好表结构
 
 1. 从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
 
@@ -101,11 +103,15 @@
     │       └── tmp.gif
     ├── fund_info_crawler.py     # 封装的爬取class
     ├── fund_statistic.py        # 统计数据
+    ├── db
+    │   └── connect.py           # 连接数据库
     ├── lib
     │   └── mysnowflake.py       # 雪花id生成
     └── utils.py                 # 一些工具函数，比如登录，设置cookies等
 
 ```
+
+> tip: 首次执行，现执行 `python ./src/acquire_fund_snapshot`, 列表快照数据是其他数据的来源
 
 ## 其他
 

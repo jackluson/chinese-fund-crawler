@@ -111,7 +111,7 @@
 
 ```
 
-> tip: 首次执行，现执行 `python ./src/acquire_fund_snapshot`, 列表快照数据是其他数据的来源
+> 提示: 首次执行时先执行 `python ./src/acquire_fund_snapshot.py`, 因为列表快照数据是其他数据的来源
 
 ## 其他
 

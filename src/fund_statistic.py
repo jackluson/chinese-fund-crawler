@@ -13,7 +13,8 @@ import pymysql
 from pprint import pprint
 from db.connect import connect
 
-cursor = connect.cursor()
+cursor = connect().cursor()
+
 if __name__ == '__main__':
     page_start = 0
     page_limit = 10000

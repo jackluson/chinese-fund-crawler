@@ -19,7 +19,9 @@ from time import sleep, time
 from pprint import pprint
 import pandas
 
-cursor = connect.cursor()
+connect_instance = connect()
+cursor = connect_instance.cursor()
+
 lock = Lock()
 
 
@@ -171,7 +173,7 @@ if __name__ == '__main__':
                     lock.acquire()
                     cursor.execute(manager_sql_insert,
                                    tuple(manager_dict.values()))
-                    connect.commit()
+                    connect_instance.commit()
                     lock.release()
                 # 季度信息  TODO: 对比数据更新时间field
                 season_dict = {
@@ -207,7 +209,7 @@ if __name__ == '__main__':
                 lock.acquire()
                 cursor.execute(season_sql_insert,
                                tuple(season_dict.values()))
-                connect.commit()
+                connect_instance.commit()
                 lock.release()
                 # 入库十大股票持仓
                 stock_position_total = each_fund.stock_position.get(
@@ -236,7 +238,7 @@ if __name__ == '__main__':
                     # print('stock_sql_insert', stock_sql_insert)
                     cursor.execute(stock_sql_insert,
                                    tuple(stock_dict.values()))
-                    connect.commit()
+                    connect_instance.commit()
                     lock.release()
                 # pprint(fundDict)
             page_start = page_start + page_limit

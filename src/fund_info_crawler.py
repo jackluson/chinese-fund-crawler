@@ -156,14 +156,14 @@ class FundSpider:
 
     def get_fund_base_info(self):
         # 基金分类
-        self.fund_cat = self._chrome_driver.find_element_by_id(
-            'qt_base').find_element_by_class_name("category").text
+        self.fund_cat = self.get_element_text_by_class_name(
+            "category", 'qt_base')
         # 成立时间
-        self.found_date = self._chrome_driver.find_element_by_id(
-            'qt_base').find_element_by_class_name("inception").text
+        self.found_date = self.get_element_text_by_class_name(
+            "inception", 'qt_base')
         # 基金公司
-        self.company = self._chrome_driver.find_element_by_id(
-            'qt_management').find_element_by_xpath("//ul[@id='qt_management']/li[4]/span[@class='col2 comp']/a").text
+        self.company = self.get_element_text_by_xpath(
+            "//ul[@id='qt_management']/li[4]/span[@class='col2 comp']/a", 'qt_management')
 
     # 获取基金经理信息
     def get_fund_manager_info(self):

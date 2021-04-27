@@ -19,7 +19,8 @@ from lib.mysnowflake import IdWorker
 from utils import parse_cookiestr, set_cookies, login_site, get_star_count
 from db.connect import connect
 
-cursor = connect.cursor()
+connect_instance = connect()
+cursor = connect_instance.cursor()
 
 '''
 判读是否当前页一致，没有的话，切换上一页，下一页操作
@@ -161,7 +162,7 @@ def get_fund_list(cookie_str=None):
         # print('fund_df', fund_df)
         fund_list = fund_df.values.tolist()
         cursor.executemany(sql_insert, fund_list)
-        connect.commit()
+        connect_instance.commit()
         # print('fund_list', fund_list)
         with open(result_dir + output_file_name, 'a') as csv_file:
             for fund_item in fund_list:

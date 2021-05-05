@@ -175,3 +175,18 @@ def get_season_index(input_date):
             index = idx + 1
             break
     return index
+
+# 写文件
+
+
+def write_json_data(data, filename, file_dir=None):
+    import json
+    if not file_dir:
+        cur_date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+        file_dir = os.getcwd() + '/output/json/' + cur_date + '/'
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+        print("目录新建成功：%s" % file_dir)
+    with open(file_dir + filename, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+        f.close()

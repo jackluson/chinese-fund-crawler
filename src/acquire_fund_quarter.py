@@ -11,13 +11,14 @@ Copyright (c) 2020 Camel Lu
 
 import math
 from threading import Thread, Lock, current_thread
-from utils import parse_cookiestr, set_cookies, login_site
-from fund_info_crawler import FundSpider
-from db.connect import connect
-from lib.mysnowflake import IdWorker
 from time import sleep, time
 from pprint import pprint
 import pandas
+from db.connect import connect
+from fund_info_crawler import FundSpider
+from lib.mysnowflake import IdWorker
+from utils import parse_cookiestr, set_cookies, login_site
+from sql_model.fund_query import FundQuery
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
@@ -63,21 +64,12 @@ def generate_insert_sql(target_dict, table_name, ignore_list):
 
 
 if __name__ == '__main__':
-    # 过滤没有股票持仓的基金
-    sql_count = "SELECT COUNT(1) FROM fund_morning_base \
-    LEFT JOIN fund_morning_snapshot ON fund_morning_snapshot.fund_code = fund_morning_base.fund_code \
-    WHERE fund_morning_base.fund_cat NOT LIKE '%%货币%%' \
-    AND fund_morning_base.fund_cat NOT LIKE '%%纯债基金%%' \
-    AND fund_morning_base.fund_cat NOT LIKE '目标日期' \
-    AND fund_morning_base.fund_name NOT LIKE '%%C' \
-    AND fund_morning_base.fund_name NOT LIKE '%%B' \
-    AND fund_morning_base.fund_cat NOT LIKE '%%短债基金%%'"
-    cursor.execute(sql_count)
-    count = cursor.fetchone()    # 获取记录条数
-    print('count', count[0])
+
+    fund_query = FundQuery()
+
+    record_total = fund_query.get_crawler_quarter_total()    # 获取记录条数
     IdWorker = IdWorker()
     page_limit = 5
-    record_total = count[0]
     page_start = 0
     error_funds = []
     output_catch_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
@@ -285,19 +277,19 @@ if __name__ == '__main__':
     #     "start": 8300,
     #     "end": record_total
     # }]
-    for i in range(1):
-        skip_num = 100
-        # print(i * step_num + skip_num, (i+1) * step_num)
-        # start = steps[i]['start']
-        # end = steps[i]['end']
-        start = i * step_num
-        end = (i + 1) * step_num
-        t = Thread(target=crawlData, args=(start, end))
-        t.setDaemon(True)
-        threaders.append(t)
-        t.start()
-    for threader in threaders:
-        threader.join()
+    # for i in range(1):
+    #     skip_num = 100
+    #     # print(i * step_num + skip_num, (i+1) * step_num)
+    #     # start = steps[i]['start']
+    #     # end = steps[i]['end']
+    #     start = i * step_num
+    #     end = (i + 1) * step_num
+    #     t = Thread(target=crawlData, args=(start, end))
+    #     t.setDaemon(True)
+    #     threaders.append(t)
+    #     t.start()
+    # for threader in threaders:
+    #     threader.join()
     stop = time()
     print('run time is %s' % (stop - start))
     print('error_funds', error_funds)

@@ -29,6 +29,7 @@ def login():
     from selenium import webdriver
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument('--headless')
     chrome_driver = webdriver.Chrome(options=chrome_options)
     chrome_driver.set_page_load_timeout(12000)
     login_url = 'https://www.morningstar.cn/membership/signin.aspx'
@@ -68,6 +69,8 @@ if __name__ == '__main__':
     WHERE fund_morning_base.fund_cat NOT LIKE '%%货币%%' \
     AND fund_morning_base.fund_cat NOT LIKE '%%纯债基金%%' \
     AND fund_morning_base.fund_cat NOT LIKE '目标日期' \
+    AND fund_morning_base.fund_name NOT LIKE '%%C' \
+    AND fund_morning_base.fund_name NOT LIKE '%%B' \
     AND fund_morning_base.fund_cat NOT LIKE '%%短债基金%%'"
     cursor.execute(sql_count)
     count = cursor.fetchone()    # 获取记录条数
@@ -101,7 +104,7 @@ if __name__ == '__main__':
         chrome_driver = login()
         morning_cookies = chrome_driver.get_cookies()
         page_start = start
-        page_limit = 10
+        page_limit = 1
         while(page_start < end):
             sql = "SELECT t.fund_code,\
             t.morning_star_code, t.fund_name, t.fund_cat \
@@ -111,6 +114,8 @@ if __name__ == '__main__':
             AND t.fund_cat NOT LIKE '%%纯债基金%%' \
             AND t.fund_cat NOT LIKE '目标日期' \
             AND t.fund_cat NOT LIKE '%%短债基金%%' \
+            AND t.fund_name NOT LIKE '%%C' \
+            AND t.fund_name NOT LIKE '%%B' \
             ORDER BY f.fund_rating_5 DESC,f.fund_rating_3 DESC, \
             t.fund_cat, t.fund_code LIMIT %s, %s"
             lock.acquire()
@@ -137,10 +142,29 @@ if __name__ == '__main__':
                     lock.release()
                     continue
                 # 开始爬取数据
-                each_fund.get_fund_season_info()  # 基本数据
-                each_fund.get_fund_manager_info()  # 基金经理模块
-                each_fund.get_fund_morning_rating()  # 基金晨星评级
-                each_fund.get_fund_qt_rating()  # 基金风险评级
+                quarter_index = each_fund.get_quarter_index()  # 数据更新时间
+                if quarter_index == each_fund.quarter_index:
+                    print('quarter_index', quarter_index)
+                if each_fund.fund_name.endswith('A'):
+                    print('fund_name', each_fund.fund_name[0:-1])
+                    similar_name = each_fund.fund_name[0:-1]
+                    sql_similar = "SELECT t.fund_code,\
+                        t.morning_star_code, t.fund_name \
+                        FROM fund_morning_base as t \
+                        LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
+                        WHERE t.fund_name LIKE %s \
+                        AND t.fund_name NOT LIKE '%%A';"
+                    lock.acquire()
+                    cursor.execute(
+                        sql_similar, [similar_name + '%'])    # 执行sql语句
+                    results = cursor.fetchall()    # 获取查询的所有记录
+                    print('results', results)
+                    lock.release()
+                # each_fund.get_fund_season_info()  # 基本数据
+                # each_fund.get_fund_manager_info()  # 基金经理模块
+                # each_fund.get_fund_morning_rating()  # 基金晨星评级
+                # each_fund.get_fund_qt_rating()  # 基金风险评级
+                continue
                 # 判断是否有股票持仓，有则爬取
                 if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
                     each_fund.get_asset_composition_info()
@@ -171,9 +195,9 @@ if __name__ == '__main__':
                     manager_sql_insert = generate_insert_sql(
                         manager_dict, 'fund_morning_manager', ['id', 'manager_id', 'name'])
                     lock.acquire()
-                    cursor.execute(manager_sql_insert,
-                                   tuple(manager_dict.values()))
-                    connect_instance.commit()
+                    # cursor.execute(manager_sql_insert,
+                    #                tuple(manager_dict.values()))
+                    # connect_instance.commit()
                     lock.release()
                 # 季度信息  TODO: 对比数据更新时间field
                 season_dict = {
@@ -207,9 +231,9 @@ if __name__ == '__main__':
                 season_sql_insert = generate_insert_sql(
                     season_dict, 'fund_morning_season', ['id', 'quarter_index', 'fund_code'])
                 lock.acquire()
-                cursor.execute(season_sql_insert,
-                               tuple(season_dict.values()))
-                connect_instance.commit()
+                # cursor.execute(season_sql_insert,
+                #                tuple(season_dict.values()))
+                # connect_instance.commit()
                 lock.release()
                 # 入库十大股票持仓
                 stock_position_total = each_fund.stock_position.get(
@@ -236,9 +260,9 @@ if __name__ == '__main__':
                         stock_dict, 'fund_morning_stock_info', ['id', 'quarter_index', 'fund_code'])
                     lock.acquire()
                     # print('stock_sql_insert', stock_sql_insert)
-                    cursor.execute(stock_sql_insert,
-                                   tuple(stock_dict.values()))
-                    connect_instance.commit()
+                    # cursor.execute(stock_sql_insert,
+                    #                tuple(stock_dict.values()))
+                    # connect_instance.commit()
                     lock.release()
                 # pprint(fundDict)
             page_start = page_start + page_limit
@@ -247,7 +271,7 @@ if __name__ == '__main__':
         chrome_driver.close()
     threaders = []
     start = time()
-    step_num = 2500
+    step_num = 1
     # steps = [{
     #     "start": 800,
     #     "end": 2500
@@ -261,7 +285,7 @@ if __name__ == '__main__':
     #     "start": 8300,
     #     "end": record_total
     # }]
-    for i in range(4):
+    for i in range(1):
         skip_num = 100
         # print(i * step_num + skip_num, (i+1) * step_num)
         # start = steps[i]['start']
@@ -275,6 +299,6 @@ if __name__ == '__main__':
     for threader in threaders:
         threader.join()
     stop = time()
-    print('run time is %s' % (stop-start))
+    print('run time is %s' % (stop - start))
     print('error_funds', error_funds)
     exit()

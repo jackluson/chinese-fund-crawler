@@ -90,7 +90,7 @@ def get_star_count(morning_star_url):
 
     # path = './assets/star/star'
     for i in range(6):
-        p1 = np.array(Image.open(path+str(i)+'.gif'))
+        p1 = np.array(Image.open(path + str(i) + '.gif'))
         p2 = np.array(Image.open(temp_star_url))
         if (p1 == p2).all():
             return i

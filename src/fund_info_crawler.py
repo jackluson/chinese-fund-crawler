@@ -11,14 +11,15 @@ Copyright (c) 2020 Camel Lu
 import re
 from time import sleep
 from bs4 import BeautifulSoup
-from utils import parse_cookiestr, set_cookies, login_site, get_star_count
+from utils import parse_cookiestr, set_cookies, login_site, get_star_count, get_season_index
 from selenium.common.exceptions import NoSuchElementException
 
 
 class FundSpider:
     # 初始化定义，利用基金代码、基金名称进行唯一化
-    def __init__(self, code, namecode, name,  chrome_driver, morning_cookies):
-        self.quarter_index = '2021-q1'  # TODO: get quarter_index by current time
+    def __init__(self, code, namecode, name, chrome_driver, morning_cookies):
+        self.quarter_index = '2021-Q1'  # TODO: get quarter_index by current time
+        self.update_date = None  # 数据更新时间，默认取资产配置更新时间
         self.fund_code = code  # 基金代码，需要初始化赋值
         self.fund_name = name  # 基金名称，需要初始化赋值
         self.morning_star_code = namecode  # 基金编码，晨星网特有，需要建立索引表
@@ -56,6 +57,7 @@ class FundSpider:
             from selenium import webdriver
             chrome_options = webdriver.ChromeOptions()
             chrome_options.add_argument("--no-sandbox")
+            # chrome_options.add_argument('--headless')
             # _chrome_driver = webdriver.Chrome("/usr/local/chromedriver")
             self._chrome_driver = webdriver.Chrome(options=chrome_options)
             self._chrome_driver.set_page_load_timeout(12000)
@@ -174,7 +176,7 @@ class FundSpider:
             manager_name = manager_ele.find_element_by_xpath(
                 "li[@class='col1']/a").text
             manager_id = re.findall(
-                r'(?<=managerid=)(\w+)$',  manager_ele.find_element_by_xpath("li[@class='col1']/a").get_attribute('href')).pop(0)
+                r'(?<=managerid=)(\w+)$', manager_ele.find_element_by_xpath("li[@class='col1']/a").get_attribute('href')).pop(0)
             manager_start_date = manager_ele.find_element_by_xpath(
                 "li[@class='col1']/i").text[0:10]
             manager_brife = manager_ele.find_element_by_xpath(
@@ -328,8 +330,17 @@ class FundSpider:
             temp_stock_info['stock_code'] = stock_base[0]
             temp_stock_info['stock_market'] = None if len(
                 stock_base) == 1 else stock_base.pop()
-            temp_stock_info['stock_name'] = li_elements[index+1].text
+            temp_stock_info['stock_name'] = li_elements[index + 1].text
             # temp_stock_info['stock_value'] = li_elements[index+2].text
             temp_stock_info['stock_portion'] = li_elements[index +
-                                                           3].text if li_elements[index+3].text != '-' else None
+                                                           3].text if li_elements[index + 3].text != '-' else None
             self.ten_top_stock_list.append(temp_stock_info)
+
+    def get_quarter_index(self):
+        # 总资产  TODO: 增加一个数据更新时间field
+        self.update_date = self.get_element_text_by_class_name(
+            "date4", 'aspnetForm')
+        split_dates = self.update_date.split('-', 1)
+        quarter_index = get_season_index(split_dates[1])
+        print("self.update_date", split_dates[0] + '-Q' + str(quarter_index))
+        return split_dates[0] + '-Q' + str(quarter_index)

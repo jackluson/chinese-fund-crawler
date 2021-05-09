@@ -11,7 +11,7 @@ from pprint import pprint
 from db.connect import connect
 from time import sleep
 import os
-from fund_info_api import FundApier
+from fund_info.api import FundApier
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
@@ -33,12 +33,15 @@ if __name__ == '__main__':
         if c_class_result:
             fund_code = c_class_result[0]
             fund_name = c_class_result[1]
-            if '封闭' in fund_name:
-                pprint(c_class_result)
-            else:
-                each_fund = FundApier(fund_code)
-                each_fund.get_base_info()
-                total_asset = each_fund.total_asset
-                sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s;"
-                cursor.execute(sql_update, [total_asset, fund_code])
-                connect_instance.commit()
+            platform = 'zh_fund' if '封闭' in fund_name else 'ai_fund'
+            each_fund = FundApier(fund_code, '2021-05-07', platform)
+
+            total_asset = each_fund.get_total_asset()
+            # 如果在爱基金平台找不到，则到展恒基金找
+            if total_asset == None and platform == 'ai_fund':
+                print("fund_code", i, fund_name, fund_code)
+                each_fund = FundApier(fund_code, '2021-05-07', 'zh_fund')
+                total_asset = each_fund.get_total_asset()
+            sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s;"
+            cursor.execute(sql_update, [total_asset, fund_code])
+            connect_instance.commit()

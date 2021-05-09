@@ -20,7 +20,7 @@ class FundQuery:
         self.lock = Lock()
 
     # 需要爬取季度性信息的基金(B,C类基金除外，因为B、C基金大部分信息与A类一致)
-    def get_crawler_quarter_total(self, ):
+    def get_crawler_quarter_fund_total(self):
         # 过滤没有股票持仓的基金
         sql_count = "SELECT COUNT(1) FROM fund_morning_base \
         LEFT JOIN fund_morning_snapshot ON fund_morning_snapshot.fund_code = fund_morning_base.fund_code \
@@ -33,3 +33,38 @@ class FundQuery:
         self.cursor.execute(sql_count)
         count = self.cursor.fetchone()
         return count[0]
+
+    # 筛选基金季度性信息的基金
+    def select_quarter_fund(self, page_start, page_limit):
+        sql = "SELECT t.fund_code,\
+            t.morning_star_code, t.fund_name, t.fund_cat \
+            FROM fund_morning_base as t \
+            LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
+            WHERE t.fund_cat NOT LIKE '%%货币%%' \
+            AND t.fund_cat NOT LIKE '%%纯债基金%%' \
+            AND t.fund_cat NOT LIKE '目标日期' \
+            AND t.fund_cat NOT LIKE '%%短债基金%%' \
+            AND t.fund_name NOT LIKE '%%C' \
+            AND t.fund_name NOT LIKE '%%B' \
+            ORDER BY f.fund_rating_5 DESC,f.fund_rating_3 DESC, \
+            t.fund_cat, t.fund_code LIMIT %s, %s"
+        self.lock.acquire()
+        self.cursor.execute(
+            sql, [page_start, page_limit])    # 执行sql语句
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        self.lock.release()
+        return results
+
+    # 筛选同类基金，除了A类
+    def select_similar_fund(self, similar_name):
+        sql_similar = "SELECT t.fund_code,\
+                t.morning_star_code, t.fund_name \
+                FROM fund_morning_base as t \
+                LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
+                WHERE t.fund_name LIKE %s \
+                AND t.fund_name NOT LIKE '%%A';"
+        self.lock.acquire()
+        self.cursor.execute(sql_similar, [similar_name + '%'])
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        self.lock.release()
+        return results

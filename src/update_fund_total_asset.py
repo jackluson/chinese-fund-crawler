@@ -11,25 +11,20 @@ from pprint import pprint
 from db.connect import connect
 from time import sleep
 import os
+from sql_model.fund_query import FundQuery
 from fund_info.api import FundApier
 
-connect_instance = connect()
-cursor = connect_instance.cursor()
 
 if __name__ == '__main__':
-    page_start = 3000
+    page_start = 3600
     page_limit = 10000
-    sql_query_a_class = "SELECT fund_code, SUBSTRING(fund_name, 1, CHAR_LENGTH(fund_name)-1) as name, fund_name FROM fund_morning_base WHERE fund_name LIKE '%%A' LIMIT %s, %s ;"
-    cursor.execute(sql_query_a_class, [page_start, page_limit])    # 执行sql语句
-    all_a_results = cursor.fetchall()    # 获取查询的所有记录
+    fund_query = FundQuery()
+    all_a_results = fund_query.select_all_a_class_fund(
+        page_start, page_limit)    # 获取查询的所有记录
     for i in range(0, len(all_a_results)):
         # pprint(result[1])
-        result = all_a_results[i]
-        sql_query_b_class = "SELECT fund_code, fund_name FROM fund_morning_base WHERE fund_name LIKE '" + \
-            result[1] + "C';"
-        # print('sql_query_b_class', sql_query_b_class)
-        cursor.execute(sql_query_b_class)
-        c_class_result = cursor.fetchone()
+        name = all_a_results[i]
+        c_class_result = fund_query.select_c_class_fund(name[1])
         if c_class_result:
             fund_code = c_class_result[0]
             fund_name = c_class_result[1]
@@ -42,6 +37,5 @@ if __name__ == '__main__':
                 print("fund_code", i, fund_name, fund_code)
                 each_fund = FundApier(fund_code, '2021-05-07', 'zh_fund')
                 total_asset = each_fund.get_total_asset()
-            sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s;"
-            cursor.execute(sql_update, [total_asset, fund_code])
-            connect_instance.commit()
+
+            fund_query.update_fund_total_asset(fund_code, total_asset)

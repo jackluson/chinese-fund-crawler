@@ -10,12 +10,12 @@ Copyright (c) 2021 Camel Lu
 from threading import Lock
 from db.connect import connect
 
-connect_instance = connect()
-
 
 class FundQuery:
 
     def __init__(self):
+        connect_instance = connect()
+        self.connect_instance = connect_instance
         self.cursor = connect_instance.cursor()
         self.lock = Lock()
 
@@ -68,3 +68,24 @@ class FundQuery:
         results = self.cursor.fetchall()    # 获取查询的所有记录
         self.lock.release()
         return results
+
+    # A类基金
+    def select_all_a_class_fund(self, start, limit):
+        sql_query_a_class = "SELECT fund_code, SUBSTRING(fund_name, 1, CHAR_LENGTH(fund_name)-1) as name, fund_name FROM fund_morning_base WHERE fund_name LIKE '%%A' LIMIT %s, %s ;"
+        self.cursor.execute(sql_query_a_class, [start, limit])    # 执行sql语句
+        all_a_results = self.cursor.fetchall()
+        return all_a_results
+
+    # 同名C类基金
+    def select_c_class_fund(self, name):
+        sql_query_c_class = "SELECT fund_code, fund_name FROM fund_morning_base WHERE fund_name LIKE '" + \
+            name + "C';"
+        self.cursor.execute(sql_query_c_class)
+        c_class_result = self.cursor.fetchone()
+        return c_class_result
+
+    # 更新基金资产
+    def update_fund_total_asset(self, fund_code, total_asset):
+        sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s;"
+        self.cursor.execute(sql_update, [total_asset, fund_code])
+        self.connect_instance.commit()

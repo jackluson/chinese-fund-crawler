@@ -11,20 +11,20 @@ Copyright (c) 2020 Camel Lu
 import re
 from time import sleep
 from bs4 import BeautifulSoup
-from utils import parse_cookiestr, set_cookies, login_site, get_star_count, get_season_index
+from utils.index import get_star_count, get_season_index
 from selenium.common.exceptions import NoSuchElementException
 
 
 class FundSpider:
     # 初始化定义，利用基金代码、基金名称进行唯一化
-    def __init__(self, code, namecode, name, chrome_driver, morning_cookies):
-        self.quarter_index = '2021-Q1'  # TODO: get quarter_index by current time
+    def __init__(self, code, namecode, name, chrome_driver):
+        self.quarter_index = '2021-Q1'
         self.update_date = None  # 数据更新时间，默认取资产配置更新时间
         self.fund_code = code  # 基金代码，需要初始化赋值
         self.fund_name = name  # 基金名称，需要初始化赋值
         self.morning_star_code = namecode  # 基金编码，晨星网特有，需要建立索引表
 
-        self._morning_cookies = morning_cookies or None
+        self._morning_cookies = chrome_driver.get_cookies() or None
         self._chrome_driver = chrome_driver or None
         self._is_trigger_catch = False
         self._catch_detail = None
@@ -49,45 +49,10 @@ class FundSpider:
         self.morning_star_rating = dict()  # 晨星评级--三年，五年，十年
         # 十大持仓信息
         self.ten_top_stock_list = []  # 股票十大持仓股信息
+
     # 处理基金详情页跳转
-
-    def login_morning_star(self, cookie_str=None):
-        login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-        if self._chrome_driver == None:
-            from selenium import webdriver
-            chrome_options = webdriver.ChromeOptions()
-            chrome_options.add_argument("--no-sandbox")
-            # chrome_options.add_argument('--headless')
-            # _chrome_driver = webdriver.Chrome("/usr/local/chromedriver")
-            self._chrome_driver = webdriver.Chrome(options=chrome_options)
-            self._chrome_driver.set_page_load_timeout(12000)
-            """
-        模拟登录,支持两种方式：
-            1. 设置已经登录的cookie
-            2. 输入账号，密码，验证码登录（验证码识别正确率30%，识别识别支持重试）
-        """
-        if cookie_str:
-            set_cookies(self._chrome_driver,
-                        login_url, cookie_str)
-        else:
-            if self._morning_cookies == None:
-                login_status = login_site(
-                    self._chrome_driver, login_url)
-                if login_status:
-                    print('login success')
-                    sleep(3)
-                else:
-                    print('login fail')
-                    exit()
-                # 获取网站cookie
-                _morning_cookies = self._chrome_driver.get_cookies()
-            else:
-                self._morning_cookies = self._chrome_driver.get_cookies()
-                # print('cookies', self._morning_cookies)  # 打印设置成功的cookie
-    # 更新基金信息，从晨星网上抓取，利用selinum原理
-
     def go_fund_url(self, cookie_str=None):
-        self.login_morning_star(cookie_str)
+        # self.login_morning_star(cookie_str)
         morning_fund_selector_url = "https://www.morningstar.cn/quicktake/" + \
             self.morning_star_code
 
@@ -102,6 +67,7 @@ class FundSpider:
             sleep(9)
             # self._chrome_driver.execute_script('location.reload()')
 
+    #TODO: 选择元素相关抽离到一个专门类中
     def get_element_text_by_class_name(self, class_name, parent_id):
         try:
             text = self._chrome_driver.find_element_by_id(
@@ -340,6 +306,7 @@ class FundSpider:
         # 总资产  TODO: 增加一个数据更新时间field
         self.update_date = self.get_element_text_by_class_name(
             "date4", 'aspnetForm')
+        print('self.update_date ', self.fund_code, self.update_date)
         split_dates = self.update_date.split('-', 1)
         quarter_index = get_season_index(split_dates[1])
         print("self.update_date", split_dates[0] + '-Q' + str(quarter_index))

@@ -16,7 +16,8 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from selenium.webdriver.support.ui import WebDriverWait
 from lib.mysnowflake import IdWorker
-from utils import parse_cookiestr, set_cookies, login_site, get_star_count
+from utils.login import login_morning_star
+from utils.index import get_star_count
 from db.connect import connect
 
 connect_instance = connect()
@@ -50,37 +51,9 @@ def text_to_be_present_in_element(locator, text, next_page_locator):
     return _predicate
 
 
-def get_fund_list(cookie_str=None):
-    from selenium import webdriver
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_driver = webdriver.Chrome(options=chrome_options)
-    chrome_driver.set_page_load_timeout(12000)    # 防止页面加载个没完
-
+def get_fund_list():
     morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
-    # "https://cn.morningstar.com/quickrank/default.aspx"
-    """
-    模拟登录,支持两种方式：
-        1. 设置已经登录的cookie
-        2. 输入账号，密码，验证码登录（验证码识别正确率30%，识别识别支持重试）
-    """
-    if cookie_str:
-        set_cookies(chrome_driver, morning_fund_selector_url, cookie_str)
-    else:
-        morning_cookies = ""
-        if morning_cookies == "":
-            login_status = login_site(chrome_driver, morning_fund_selector_url)
-            if login_status:
-                print('login success')
-                sleep(3)
-            else:
-                print('login fail')
-                exit()
-            # 获取网站cookie
-            morning_cookies = chrome_driver.get_cookies()
-        else:
-            chrome_driver.get(morning_fund_selector_url)  # 再次打开爬取页面
-            print(chrome_driver.get_cookies())  # 打印设置成功的cookie
+    chrome_driver = login_morning_star(morning_fund_selector_url, True)
     # 定义起始页码
     page_num = 445
     page_count = 25
@@ -104,6 +77,7 @@ def get_fund_list(cookie_str=None):
         xpath_str = '/html/body/form/div[8]/div/div[4]/div[3]/div[3]/div[1]/a[%s]' % (
             num)
         print('page_num', page_num)
+
         # 等待，直到当前页（样式判断）等于page_num
         WebDriverWait(chrome_driver, timeout=600).until(text_to_be_present_in_element(
             "/html/body/form/div[8]/div/div[4]/div[3]/div[3]/div[1]/span[@style='margin-right:5px;font-weight:Bold;color:red;']", str(page_num), xpath_str))
@@ -182,6 +156,4 @@ def get_fund_list(cookie_str=None):
 
 
 if __name__ == "__main__":
-    cookie_str = 'Hm_lvt_eca85e284f8b74d1200a42c9faa85464=1610788772; user=username=18219112108@163.com&nickname=camel-lu&status=Free&password=KFPJOQuxD1w=; MS_LocalEmailAddr=18219112108@163.com=; ASP.NET_SessionId=0aenwime2ljio155dogxybev; Hm_lvt_eca85e284f8b74d1200a42c9faa85464=; MSCC=GUflpfSQOVM=; authWeb=5220F774042557D9FA31A08FA717CB8DE74F5016A9ADDB25C269FBB69C7DF340D59E6E63061444FE0B93DBB4F5AAFA6B1D21155C3FAA68C79992F39B9986630AEB6F674F242B6B792693ABB6162784CA329333200C2BBDD44021A1F38E80A363F157CD24D4D0E527C3E8F23E3DEA13C5D9950FF5; Hm_lpvt_eca85e284f8b74d1200a42c9faa85464=1613479786'
-
     fund_list = get_fund_list()

@@ -9,31 +9,14 @@ Copyright (c) 2020 Camel Lu
 '''
 import os
 import math
-from utils import parse_cookiestr, set_cookies, login_site
-from fund_info_crawler import FundSpider
+from utils.login import login_morning_star
+from fund_info.crawler import FundSpider
 from lib.mysnowflake import IdWorker
 import pymysql
 from db.connect import connect
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
-
-
-def login():
-    from selenium import webdriver
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_driver = webdriver.Chrome(options=chrome_options)
-    chrome_driver.set_page_load_timeout(12000)
-    login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-    login_status = login_site(
-        chrome_driver, login_url)
-    if login_status:
-        print('login success')
-    else:
-        print('login fail')
-        exit()
-    return chrome_driver
 
 
 if __name__ == '__main__':
@@ -45,8 +28,8 @@ if __name__ == '__main__':
     cursor.execute(sql_count)
     count = cursor.fetchone()    # 获取记录条数
     print('count', count[0])
-    chrome_driver = login()
-    morning_cookies = chrome_driver.get_cookies()
+    login_url = 'https://www.morningstar.cn/membership/signin.aspx'
+    chrome_driver = login_morning_star(login_url, True)
     IdWorker = IdWorker()
     page_limit = 10
     record_total = count[0]
@@ -62,7 +45,7 @@ if __name__ == '__main__':
         results = cursor.fetchall()    # 获取查询的所有记录
         for record in results:
             each_fund = FundSpider(
-                record[0], record[1], record[2], chrome_driver, morning_cookies)
+                record[0], record[1], record[2], chrome_driver)
             # 从晨星网上更新信息
             is_normal = each_fund.go_fund_url()
             if is_normal == False:

@@ -15,35 +15,16 @@ from time import sleep, time
 from pprint import pprint
 import pandas
 from db.connect import connect
-from fund_info_crawler import FundSpider
+from fund_info.crawler import FundSpider
+from fund_info.csv import FundCSV
 from lib.mysnowflake import IdWorker
-from utils import parse_cookiestr, set_cookies, login_site
+from utils.login import login_morning_star
 from sql_model.fund_query import FundQuery
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
 
 lock = Lock()
-
-
-def login():
-    from selenium import webdriver
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument('--headless')
-    chrome_driver = webdriver.Chrome(options=chrome_options)
-    chrome_driver.set_page_load_timeout(12000)
-    login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-    lock.acquire()
-    login_status = login_site(
-        chrome_driver, login_url)
-    lock.release()
-    if login_status:
-        print('login success')
-    else:
-        print('login fail')
-        exit()
-    return chrome_driver
 
 
 def generate_insert_sql(target_dict, table_name, ignore_list):
@@ -65,73 +46,52 @@ def generate_insert_sql(target_dict, table_name, ignore_list):
 
 if __name__ == '__main__':
 
-    fund_query = FundQuery()
+    each_fund_query = FundQuery()
 
-    record_total = fund_query.get_crawler_quarter_total()    # 获取记录条数
+    record_total = each_fund_query.get_crawler_quarter_fund_total()    # 获取记录条数
     IdWorker = IdWorker()
     page_limit = 5
     page_start = 0
-    error_funds = []
-    output_catch_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
-        '类型' + ',' + '股票总仓位' + ',' + '页码' + ',' + '备注' + '\n'
+    # error_funds = []
     # 设置表头
     result_dir = './output/'
+    fund_csv = FundCSV(result_dir)
 
     if page_start == 0:
-        with open(result_dir + 'fund_morning_season_catch.csv', 'w+') as csv_file:
-            csv_file.write(output_catch_head)
-    output_catch_error = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
-        '类型' + ',' + '页码' + ',' + '备注' + '\n'
-    if page_start == 0:
-        with open(result_dir + 'fund_morning_season_error.csv', 'w+') as csv_file:
-            csv_file.write(output_catch_error)
-    df = pandas.read_csv(
-        result_dir + 'fund_morning_season_error.csv', usecols=[0, 2, 4])
-    fund_list = df.values.tolist()
+        fund_csv.write_season_catch_fund(True)
+        fund_csv.write_abnormal_url_fund(True)
+
+    # df = pandas.read_csv(
+    #     result_dir + 'fund_morning_season_error.csv', usecols=[0, 2, 4])
+    # fund_list = df.values.tolist()
     # print(len(d[d['代码'].astype(str).str.contains('10535')]))
     # print(df[df['代码'].astype(str).str.contains('10535')]
     #       ['股票总仓位'].values)
 
     def crawlData(start, end):
-        chrome_driver = login()
-        morning_cookies = chrome_driver.get_cookies()
+        login_url = 'https://www.morningstar.cn/membership/signin.aspx'
+        chrome_driver = login_morning_star(login_url, True)
         page_start = start
-        page_limit = 1
+        page_limit = 10
         while(page_start < end):
-            sql = "SELECT t.fund_code,\
-            t.morning_star_code, t.fund_name, t.fund_cat \
-            FROM fund_morning_base as t \
-            LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
-            WHERE t.fund_cat NOT LIKE '%%货币%%' \
-            AND t.fund_cat NOT LIKE '%%纯债基金%%' \
-            AND t.fund_cat NOT LIKE '目标日期' \
-            AND t.fund_cat NOT LIKE '%%短债基金%%' \
-            AND t.fund_name NOT LIKE '%%C' \
-            AND t.fund_name NOT LIKE '%%B' \
-            ORDER BY f.fund_rating_5 DESC,f.fund_rating_3 DESC, \
-            t.fund_cat, t.fund_code LIMIT %s, %s"
-            lock.acquire()
-            cursor.execute(
-                sql, [page_start, page_limit])    # 执行sql语句
-            results = cursor.fetchall()    # 获取查询的所有记录
-            lock.release()
+            results = each_fund_query.select_quarter_fund(
+                page_start, page_limit)
+            print('results', results)
             for record in results:
                 sleep(1)
                 print(current_thread().getName(), 'record-->', record)
                 each_fund = FundSpider(
-                    record[0], record[1], record[2], chrome_driver, morning_cookies)
+                    record[0], record[1], record[2], chrome_driver)
                 is_normal = each_fund.go_fund_url()
                 # 是否能正常跳转到基金详情页，没有的话，写入csv,退出当前循环
                 if is_normal == False:
-                    lock.acquire()
-                    error_funds.append(each_fund.fund_code)
+                    # error_funds.append(each_fund.fund_code)
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
                                   each_fund.fund_name, record[3], page_start, '页面跳转有问题']
-                    with open(result_dir + 'fund_morning_season_error.csv', 'a') as csv_file:
-                        output_line = ', '.join(str(x)
-                                                for x in fund_infos) + '\n'
-                        csv_file.write(output_line)
-                    lock.release()
+                    output_line = ', '.join(str(x)
+                                            for x in fund_infos) + '\n'
+                    fund_csv.write_abnormal_url_fund(False, output_line)
+
                     continue
                 # 开始爬取数据
                 quarter_index = each_fund.get_quarter_index()  # 数据更新时间
@@ -140,42 +100,30 @@ if __name__ == '__main__':
                 if each_fund.fund_name.endswith('A'):
                     print('fund_name', each_fund.fund_name[0:-1])
                     similar_name = each_fund.fund_name[0:-1]
-                    sql_similar = "SELECT t.fund_code,\
-                        t.morning_star_code, t.fund_name \
-                        FROM fund_morning_base as t \
-                        LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
-                        WHERE t.fund_name LIKE %s \
-                        AND t.fund_name NOT LIKE '%%A';"
-                    lock.acquire()
-                    cursor.execute(
-                        sql_similar, [similar_name + '%'])    # 执行sql语句
-                    results = cursor.fetchall()    # 获取查询的所有记录
+                    results = each_fund_query.select_similar_fund(
+                        similar_name)    # 获取查询的所有记录
                     print('results', results)
-                    lock.release()
-                # each_fund.get_fund_season_info()  # 基本数据
-                # each_fund.get_fund_manager_info()  # 基金经理模块
-                # each_fund.get_fund_morning_rating()  # 基金晨星评级
-                # each_fund.get_fund_qt_rating()  # 基金风险评级
-                continue
+                each_fund.get_fund_season_info()  # 基本季度性数据
+                each_fund.get_fund_manager_info()  # 基金经理模块
+                each_fund.get_fund_morning_rating()  # 基金晨星评级
+                each_fund.get_fund_qt_rating()  # 基金风险评级
+                print('each_fund.total_asset', each_fund.total_asset)
                 # 判断是否有股票持仓，有则爬取
                 if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
                     each_fund.get_asset_composition_info()
-                # 爬取过程中是否有异常
+                # 爬取过程中是否有异常,有的话，存在csv中
                 if each_fund._is_trigger_catch == True:
-                    lock.acquire()
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
                                   each_fund.fund_name, record[3],
                                   each_fund.stock_position['total'],
                                   page_start, each_fund._catch_detail]
-                    with open(result_dir + 'fund_morning_season_catch.csv', 'a') as csv_file:
-                        output_line = ', '.join(str(x)
-                                                for x in fund_infos) + '\n'
-                        csv_file.write(output_line)
-                    lock.release()
+                    fund_csv.write_season_catch_fund(False, output_line)
                 # 入库
                 lock.acquire()
                 snow_flake_id = IdWorker.get_id()
                 lock.release()
+                continue
+
                 # 基金经理
                 if each_fund.manager.get('id'):
                     manager_dict = {
@@ -262,35 +210,35 @@ if __name__ == '__main__':
             sleep(3)
         chrome_driver.close()
     threaders = []
-    start = time()
-    step_num = 1
-    # steps = [{
-    #     "start": 800,
-    #     "end": 2500
-    # }, {
-    #     "start": 2740,
-    #     "end": 5000
-    # }, {
-    #     "start": 5100,
-    #     "end": 7500
-    # }, {
-    #     "start": 8300,
-    #     "end": record_total
-    # }]
-    # for i in range(1):
-    #     skip_num = 100
-    #     # print(i * step_num + skip_num, (i+1) * step_num)
-    #     # start = steps[i]['start']
-    #     # end = steps[i]['end']
-    #     start = i * step_num
-    #     end = (i + 1) * step_num
-    #     t = Thread(target=crawlData, args=(start, end))
-    #     t.setDaemon(True)
-    #     threaders.append(t)
-    #     t.start()
-    # for threader in threaders:
-    #     threader.join()
-    stop = time()
-    print('run time is %s' % (stop - start))
-    print('error_funds', error_funds)
+    start_time = time()
+    step_num = 10
+    steps = [{
+        "start": 800,
+        "end": 2500
+    }, {
+        "start": 2740,
+        "end": 5000
+    }, {
+        "start": 5100,
+        "end": 7500
+    }, {
+        "start": 8300,
+        "end": record_total
+    }]
+    for i in range(0):
+        skip_num = 10
+        # print(i * step_num + skip_num, (i+1) * step_num)
+        # start = steps[i]['start']
+        # end = steps[i]['end']
+        start = i * step_num
+        end = (i + 1) * step_num
+        t = Thread(target=crawlData, args=(start, end))
+        t.setDaemon(True)
+        threaders.append(t)
+        t.start()
+    for threader in threaders:
+        threader.join()
+    end_time = time()
+    print('run time is %s' % (end_time - start_time))
+    # print('error_funds', error_funds)
     exit()

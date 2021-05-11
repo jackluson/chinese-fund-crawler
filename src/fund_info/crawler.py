@@ -67,7 +67,6 @@ class FundSpider:
             sleep(9)
             # self._chrome_driver.execute_script('location.reload()')
 
-    #TODO: 选择元素相关抽离到一个专门类中
     def get_element_text_by_class_name(self, class_name, parent_id):
         try:
             text = self._chrome_driver.find_element_by_id(
@@ -77,7 +76,7 @@ class FundSpider:
             self._is_trigger_catch = True
             self._catch_detail = parent_id + '-' + class_name
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, self.stock_position["total"])
+                  '-', self.morning_star_code, self.stock_position["total"], class_name)
             file_name = './abnormal/' + self.fund_code + \
                 '-' + parent_id + "-no_such_element.png"
             # self._chrome_driver.save_screenshot(file_name)
@@ -94,7 +93,7 @@ class FundSpider:
             self._is_trigger_catch = True
             self._catch_detail = id
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, self.stock_position["total"])
+                  '-', self.morning_star_code, self.stock_position["total"], id)
             file_name = './abnormal/' + '-' + id + self.fund_code + "-no_such_element.png"
             # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
@@ -114,7 +113,7 @@ class FundSpider:
             self._is_trigger_catch = True
             self._catch_detail = xpath
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, self.stock_position["total"])
+                  '-', self.morning_star_code, self.stock_position["total"], xpath)
             file_name = './abnormal/' + \
                 self.fund_code + '-' + xpath + "-no_such_element.png"
             # self._chrome_driver.save_screenshot(file_name)
@@ -154,7 +153,7 @@ class FundSpider:
         except NoSuchElementException:
             self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code)
+                  '-', self.morning_star_code, 'get_fund_manager_info')
             file_name = './abnormal/manager-' + self.fund_code + "-no_such_element.png"
             # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
@@ -179,7 +178,7 @@ class FundSpider:
         except NoSuchElementException:
             self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code)
+                  '-', self.morning_star_code, 'get_fund_morning_rating')
             file_name = './abnormal/morning_rating-' + \
                 self.fund_code + "-no_such_element.png"
     # 风险评级
@@ -211,7 +210,7 @@ class FundSpider:
         except NoSuchElementException:
             self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code)
+                  '-', self.morning_star_code, 'get_fund_qt_rating')
             file_name = './abnormal/qt_rating-' + self.fund_code + "-no_such_element.png"
 
     def get_fund_season_info(self):
@@ -259,7 +258,6 @@ class FundSpider:
         # 获取标准差
         # standard_deviation = self._chrome_driver.find_element_by_id(
         #     "qt_risk").find_element_by_xpath('li[16]').text
-        #  TODO: 增加一个数据更新时间field
         standard_deviation = self.get_element_text_by_xpath(
             'li[16]', 'qt_risk')
         if standard_deviation != None:
@@ -303,7 +301,6 @@ class FundSpider:
             self.ten_top_stock_list.append(temp_stock_info)
 
     def get_quarter_index(self):
-        # 总资产  TODO: 增加一个数据更新时间field
         update_date = self.get_element_text_by_class_name(
             "date4", 'aspnetForm')
         if(update_date == None):

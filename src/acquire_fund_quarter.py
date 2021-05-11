@@ -91,7 +91,7 @@ if __name__ == '__main__':
                 # 开始爬取数据
                 quarter_index = each_fund.get_quarter_index()  # 数据更新时间,如果不一致，不爬取下面数据
                 if quarter_index != each_fund.quarter_index:
-                    print('quarter_index', quarter_index)
+                    print('quarter_index', quarter_index, each_fund.update_date)
                     continue
 
                 each_fund.get_fund_season_info()  # 基本季度性数据
@@ -107,6 +107,8 @@ if __name__ == '__main__':
                                   each_fund.fund_name, record[3],
                                   each_fund.stock_position['total'],
                                   page_start, each_fund._catch_detail]
+                    output_line = ', '.join(str(x)
+                                            for x in fund_infos) + '\n'
                     fund_csv.write_season_catch_fund(False, output_line)
                 # 入库
                 lock.acquire()
@@ -123,7 +125,6 @@ if __name__ == '__main__':
                         'brife': each_fund.manager.get('brife')
                     }
                     fund_insert.insert_fund_manger_info(manager_dict)
-                # 季度信息  TODO: 对比数据更新时间field
                 quarterly_dict = {
                     'id': snow_flake_id,
                     'quarter_index': each_fund.quarter_index,
@@ -205,12 +206,12 @@ if __name__ == '__main__':
         "end": 1500
     }, {
         "start": 1500,
-        "end": 3000
+        "end": 2500
     }, {
-        "start": 3000,
-        "end": 4500
+        "start": 2500,
+        "end": 3500
     }, {
-        "start": 4500,
+        "start": 3500,
         "end": record_total
     }]
     for i in range(4):

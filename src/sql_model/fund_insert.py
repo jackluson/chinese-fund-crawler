@@ -33,3 +33,30 @@ class FundInsert:
             update_values=update_values[0:-1]
         )
         return sql_insert
+
+    def insert_fund_manger_info(self, manager_dict):
+        self.lock.acquire()
+        manager_sql_insert = self.generate_insert_sql(
+            manager_dict, 'fund_morning_manager', ['id', 'manager_id', 'name'])
+        self.cursor.execute(manager_sql_insert,
+                            tuple(manager_dict.values()))
+        self.connect_instance.commit()
+        self.lock.release()
+
+    def fund_quarterly_info(self, quarterly_dict):
+        self.lock.acquire()
+        quarterly_sql_insert = self.generate_insert_sql(
+            quarterly_dict, 'fund_morning_quarter', ['id', 'quarter_index', 'fund_code'])
+        self.cursor.execute(quarterly_sql_insert,
+                            tuple(quarterly_dict.values()))
+        self.connect_instance.commit()
+        self.lock.release()
+
+    def fund_stock_info(self, stock_dict):
+        self.lock.acquire()
+        stock_sql_insert = self.generate_insert_sql(
+            stock_dict, 'fund_morning_stock_info', ['id', 'quarter_index', 'fund_code'])
+        self.cursor.execute(stock_sql_insert,
+                            tuple(stock_dict.values()))
+        self.connect_instance.commit()
+        self.lock.release()

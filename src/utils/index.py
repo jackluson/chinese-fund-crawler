@@ -8,7 +8,7 @@ def get_star_count(morning_star_url):
     import numpy as np
     import requests
     from PIL import Image
-    module_path = os.path.dirname(__file__)
+    module_path = os.getcwd() + '/src'
     temp_star_url = module_path + '/assets/star/tmp.gif'
     r = requests.get(morning_star_url)
     with open(temp_star_url, "wb") as f:

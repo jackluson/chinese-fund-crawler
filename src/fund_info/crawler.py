@@ -304,10 +304,17 @@ class FundSpider:
 
     def get_quarter_index(self):
         # 总资产  TODO: 增加一个数据更新时间field
-        self.update_date = self.get_element_text_by_class_name(
+        update_date = self.get_element_text_by_class_name(
             "date4", 'aspnetForm')
-        print('self.update_date ', self.fund_code, self.update_date)
+        if(update_date == None):
+            self._chrome_driver.refresh()
+            print('wait:fund_code', self.fund_code)
+            sleep(9)
+            update_date = self.get_element_text_by_class_name(
+                "date4", 'aspnetForm')
+        if update_date == None:
+            return
+        self.update_date = update_date
         split_dates = self.update_date.split('-', 1)
         quarter_index = get_season_index(split_dates[1])
-        print("self.update_date", split_dates[0] + '-Q' + str(quarter_index))
         return split_dates[0] + '-Q' + str(quarter_index)

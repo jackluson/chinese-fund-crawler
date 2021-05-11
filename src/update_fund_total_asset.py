@@ -19,6 +19,7 @@ if __name__ == '__main__':
     page_start = 3600
     page_limit = 10000
     fund_query = FundQuery()
+    # 获取所有的A类基金
     all_a_results = fund_query.select_all_a_class_fund(
         page_start, page_limit)    # 获取查询的所有记录
     for i in range(0, len(all_a_results)):

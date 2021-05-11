@@ -101,13 +101,22 @@
     │       ├── star4.gif
     │       ├── star5.gif
     │       └── tmp.gif
-    ├── fund_info_crawler.py     # 封装的爬取class
     ├── fund_statistic.py        # 统计数据
     ├── db
     │   └── connect.py           # 连接数据库
+    ├── fund_info
+    │   ├── api.py               # api 基金信息爬取，主要是补充crawler不到一些信息
+    │   ├── crawler.py           # 基金页面爬取
+    │   └── csv.py               # 基金存为csv
     ├── lib
     │   └── mysnowflake.py       # 雪花id生成
+    ├── update_fund_total_asset.py # 更新基金的总资产，主要是一些同类基金，在晨星网数据不一致
     └── utils.py                 # 一些工具函数，比如登录，设置cookies等
+        ├── __init__.py
+        ├── cookies.py
+        ├── file_op.py
+        ├── index.py
+        └── login.py
 
 ```
 

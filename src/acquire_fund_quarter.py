@@ -91,7 +91,8 @@ if __name__ == '__main__':
                 # 开始爬取数据
                 quarter_index = each_fund.get_quarter_index()  # 数据更新时间,如果不一致，不爬取下面数据
                 if quarter_index != each_fund.quarter_index:
-                    print('quarter_index', quarter_index, each_fund.update_date)
+                    print('quarter_index', quarter_index, each_fund.update_date,
+                          each_fund.fund_code, each_fund.fund_code)
                     continue
 
                 each_fund.get_fund_season_info()  # 基本季度性数据

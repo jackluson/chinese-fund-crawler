@@ -17,11 +17,14 @@ def get_star_count(morning_star_url):
     path = module_path + '/assets/star/star'
 
     # path = './assets/star/star'
-    for i in range(6):
-        p1 = np.array(Image.open(path + str(i) + '.gif'))
-        p2 = np.array(Image.open(temp_star_url))
-        if (p1 == p2).all():
-            return i
+    try:
+        for i in range(6):
+            p1 = np.array(Image.open(path + str(i) + '.gif'))
+            p2 = np.array(Image.open(temp_star_url))
+            if (p1 == p2).all():
+                return i
+    except:
+        print('morning_star_url', morning_star_url)
 
 
 def parse_csv(datafile):

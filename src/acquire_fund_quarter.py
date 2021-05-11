@@ -92,7 +92,7 @@ if __name__ == '__main__':
                 quarter_index = each_fund.get_quarter_index()  # 数据更新时间,如果不一致，不爬取下面数据
                 if quarter_index != each_fund.quarter_index:
                     print('quarter_index', quarter_index, each_fund.update_date,
-                          each_fund.fund_code, each_fund.fund_code)
+                          each_fund.fund_code, each_fund.fund_name)
                     continue
 
                 each_fund.get_fund_season_info()  # 基本季度性数据
@@ -202,28 +202,27 @@ if __name__ == '__main__':
         chrome_driver.close()
     threaders = []
     start_time = time()
-    step_num = 10
     steps = [{
         "start": 0,
-        "end": 1500
+        "end": 1000
     }, {
-        "start": 1500,
-        "end": 2500
+        "start": 1000,
+        "end": 2000
     }, {
-        "start": 2500,
-        "end": 3500
+        "start": 2000,
+        "end": 3000
     }, {
         "start": 3500,
         "end": record_total
     }]
-    for i in range(4):
-        skip_num = 0
-        # print(i * step_num + skip_num, (i + 1) * step_num)
-        start = steps[i]['start']
-        end = steps[i]['end']
-        # start = i * step_num
-        # end = (i + 1) * step_num
-        t = Thread(target=crawlData, args=(start, end))
+    thread_count = 4
+    step_num = record_total / thread_count
+    for i in range(thread_count):
+        # start = steps[i]['start']
+        # end = steps[i]['end']
+        start = i * step_num
+        end = (i + 1) * step_num
+        t = Thread(target=crawlData, args=(int(start), int(end)))
         t.setDaemon(True)
         threaders.append(t)
         t.start()
@@ -231,5 +230,4 @@ if __name__ == '__main__':
         threader.join()
     end_time = time()
     print(record_total, 'run time is %s' % (end_time - start_time))
-    # print('error_funds', error_funds)
     exit()

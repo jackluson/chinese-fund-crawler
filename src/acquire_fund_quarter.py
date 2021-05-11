@@ -190,9 +190,10 @@ if __name__ == '__main__':
                         quarterly_dict['total_asset'] = total_asset
                         quarterly_dict['id'] = snow_flake_id + i + 1
                         fund_insert.fund_quarterly_info(quarterly_dict)
-                        stock_dict['fund_code'] = item_code
-                        stock_dict['id'] = snow_flake_id + i + 1
-                        fund_insert.fund_stock_info(stock_dict)
+                        if float(stock_position_total) > 0:
+                            stock_dict['fund_code'] = item_code
+                            stock_dict['id'] = snow_flake_id + i + 1
+                            fund_insert.fund_stock_info(stock_dict)
                 # pprint(fundDict)
             page_start = page_start + page_limit
             print(current_thread().getName(), 'page_start', page_start)

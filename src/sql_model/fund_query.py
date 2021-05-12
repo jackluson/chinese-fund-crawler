@@ -85,8 +85,26 @@ class FundQuery:
         c_class_result = self.cursor.fetchone()
         return c_class_result
 
-    # 更新基金资产
+    # 更新基金资产 -- fund_morning_quarter
     def update_fund_total_asset(self, fund_code, total_asset):
         sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s;"
         self.cursor.execute(sql_update, [total_asset, fund_code])
         self.connect_instance.commit()
+
+    def select_top_10_stock(self, query_index=None):
+        stock_sql_join = ''
+        for index in range(10):
+            stock_sql_join = stock_sql_join + \
+                "t.top_stock_%s_code, t.top_stock_%s_name" % (
+                    str(index), str(index)) + ","
+        # print(stock_sql_join[0:-1])
+        stock_sql_join = stock_sql_join[0:-1]
+        print(
+            "🚀 ~ file: fund_query.py ~ line 102 ~ stock_sql_join", stock_sql_join)
+        sql_query_season = "SELECT t.fund_code," + stock_sql_join + \
+            " FROM fund_morning_stock_info as t WHERE t.quarter_index = %s AND t.stock_position_total > 20;"  # 大于20%股票持仓基金
+        if query_index == None:
+            query_index = self.quarter_index
+        self.cursor.execute(sql_query_season, [query_index])    # 执行sql语句
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        return results

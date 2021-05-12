@@ -12,24 +12,14 @@ Copyright (c) 2020 Camel Lu
 import pymysql
 from pprint import pprint
 from db.connect import connect
+from sql_model.fund_query import FundQuery
 
 cursor = connect().cursor()
 
 if __name__ == '__main__':
-    page_start = 0
-    page_limit = 10000
-    stock_sql_join = ''
-    for index in range(10):
-        stock_sql_join = stock_sql_join + \
-            "t.top_stock_%s_code, t.top_stock_%s_name" % (
-                str(index), str(index)) + ","
-    # print(stock_sql_join[0:-1])
-    stock_sql_join = stock_sql_join[0:-1]
-    # print(stock_sql_join)
-    sql_query_season = "SELECT t.fund_code," + stock_sql_join + \
-        " FROM fund_morning_stock_info as t WHERE t.quarter_index = '2020-q4' AND t.stock_position_total > 20 LIMIT %s, %s ;"
-    cursor.execute(sql_query_season, [page_start, page_limit])    # 执行sql语句
-    results = cursor.fetchall()    # 获取查询的所有记录
+    each_query = FundQuery()
+    query_index = '2021-Q1'
+    results = each_query.select_top_10_stock(query_index)
     # pprint(results)
     code_dict = dict()
     for result in results:
@@ -49,6 +39,7 @@ if __name__ == '__main__':
             filer_dict[key] = value
             # print(key + ":" + str(value))
     list = sorted(filer_dict.items(), key=lambda x: x[1], reverse=True)
+    print(len(list))
     pprint(list)
     # pprint(dir(code_dict))
     # filer_dict = dict((name, getattr(code_dict, name))

@@ -19,7 +19,13 @@ from fund_info.statistic import FundStatistic
 
 if __name__ == '__main__':
     each_statistic = FundStatistic()
-    stock_top_list = each_statistic.statistic_stock_fund_count(
-        filter_count=88)
+
+    stock_top_list = each_statistic.all_stock_fund_count(
+        quarter_index="2021-Q1",
+        filter_count=89)
+    print('2020-Q4 top 50 股票')
     pprint(stock_top_list)
     print(len(stock_top_list))
+
+    stock_quarter_count = each_statistic.item_stock_fund_count('海螺水泥')
+    print("stock_quarter_count", stock_quarter_count)

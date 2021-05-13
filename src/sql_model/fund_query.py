@@ -91,7 +91,7 @@ class FundQuery:
         self.cursor.execute(sql_update, [total_asset, fund_code])
         self.connect_instance.commit()
 
-    def select_top_10_stock(self, query_index=None):
+    def select_top_10_stock(self, quarter_index=None):
         stock_sql_join = ''
         for index in range(10):
             stock_sql_join = stock_sql_join + \
@@ -99,10 +99,26 @@ class FundQuery:
                     str(index), str(index)) + ","
         # print(stock_sql_join[0:-1])
         stock_sql_join = stock_sql_join[0:-1]
-        sql_query_season = "SELECT t.fund_code," + stock_sql_join + \
+        sql_query_quarter = "SELECT t.fund_code," + stock_sql_join + \
             " FROM fund_morning_stock_info as t WHERE t.quarter_index = %s AND t.stock_position_total > 20;"  # 大于20%股票持仓基金
-        if query_index == None:
-            query_index = self.quarter_index
-        self.cursor.execute(sql_query_season, [query_index])    # 执行sql语句
+        if quarter_index == None:
+            quarter_index = self.quarter_index
+        self.cursor.execute(sql_query_quarter, [quarter_index])    # 执行sql语句
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        return results
+
+    # 分组查询特定股票的每个季度基金持有总数
+    def select_special_stock_fund_count(self, stock_name):
+        stock_sql_join = '('
+        for index in range(10):
+            stock_sql_join = stock_sql_join + \
+                "t.top_stock_%s_name = '%s' or " % (
+                    str(index), stock_name)
+        # print(stock_sql_join[0:-1])
+        stock_sql_join = stock_sql_join[0:-3] + ')'
+        sql_query_sqecial_stock_fund_count = "SELECT count(1) as count, quarter_index FROM fund_morning_stock_info as t WHERE t.stock_position_total > 20 AND " + \
+            stock_sql_join + " GROUP BY t.quarter_index;"  # 大于20%股票持仓基金
+
+        self.cursor.execute(sql_query_sqecial_stock_fund_count)    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results

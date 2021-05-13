@@ -27,19 +27,20 @@ class FundStatistic:
         index = get_season_index(date)
         quarter_index = year + '-Q' + str(index)
         self.quarter_index = quarter_index
+        self.each_query = FundQuery()
 
-    def statistic_stock_fund_count(self, *, query_index=None, filter_count=100):
-        each_query = FundQuery()
-        query_index = query_index if query_index else self.quarter_index
-        results = each_query.select_top_10_stock(query_index)
+    def all_stock_fund_count(self, *, quarter_index=None, filter_count=100):
+        quarter_index = quarter_index if quarter_index else self.quarter_index
+        results = self.each_query.select_top_10_stock(quarter_index)
         # pprint(results)
         code_dict = dict()
         for result in results:
             # print(result)
             for index in range(1, len(result), 2):
                 code = result[index]
-                name = result[index + 1]
-                key = str(code) + '-' + str(name)
+                name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
+                # key = str(code) + '-' + str(name)
+                key = str(name)
                 if(key in code_dict and code != None):
                     code_dict[key] = code_dict[key] + 1
                 else:
@@ -52,3 +53,7 @@ class FundStatistic:
                 # print(key + ":" + str(value))
         list = sorted(filer_dict.items(), key=lambda x: x[1], reverse=True)
         return list
+
+    # 分组查询特定股票的每个季度基金持有总数
+    def item_stock_fund_count(self, stock_name):
+        return self.each_query.select_special_stock_fund_count(stock_name)

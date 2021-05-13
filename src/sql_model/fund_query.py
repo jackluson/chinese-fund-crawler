@@ -99,8 +99,6 @@ class FundQuery:
                     str(index), str(index)) + ","
         # print(stock_sql_join[0:-1])
         stock_sql_join = stock_sql_join[0:-1]
-        print(
-            "🚀 ~ file: fund_query.py ~ line 102 ~ stock_sql_join", stock_sql_join)
         sql_query_season = "SELECT t.fund_code," + stock_sql_join + \
             " FROM fund_morning_stock_info as t WHERE t.quarter_index = %s AND t.stock_position_total > 20;"  # 大于20%股票持仓基金
         if query_index == None:

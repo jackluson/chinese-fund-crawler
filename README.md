@@ -107,6 +107,7 @@
     ├── fund_info
     │   ├── api.py               # api 基金信息爬取，主要是补充crawler不到一些信息
     │   ├── crawler.py           # 基金页面爬取
+    │   ├── statistic.py         # 基金统计
     │   └── csv.py               # 基金存为csv
     ├── lib
     │   └── mysnowflake.py       # 雪花id生成

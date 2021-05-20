@@ -11,6 +11,7 @@ import time
 import datetime
 import os
 import sys
+from pprint import pprint
 sys.path.append('../')
 sys.path.append(os.getcwd() + '/src')
 from utils.index import get_season_index
@@ -29,10 +30,12 @@ class FundStatistic:
         self.quarter_index = quarter_index
         self.each_query = FundQuery()
 
-    def all_stock_fund_count(self, *, quarter_index=None, filter_count=100):
+    def all_stock_fund_count(self, *, quarter_index=None, sample_fund_list=None, filter_count=100):
         quarter_index = quarter_index if quarter_index else self.quarter_index
-        results = self.each_query.select_top_10_stock(quarter_index)
-        # pprint(results)
+        results = self.each_query.select_top_10_stock(
+            quarter_index,
+            sample_fund_list
+        )
         code_dict = dict()
         for result in results:
             # print(result)
@@ -40,6 +43,7 @@ class FundStatistic:
                 code = result[index]
                 name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
                 # key = str(code) + '-' + str(name)
+
                 key = str(name)
                 if(key in code_dict and code != None):
                     code_dict[key] = code_dict[key] + 1
@@ -55,5 +59,5 @@ class FundStatistic:
         return list
 
     # 分组查询特定股票的每个季度基金持有总数
-    def item_stock_fund_count(self, stock_name):
-        return self.each_query.select_special_stock_fund_count(stock_name)
+    def item_stock_fund_count(self, stock_name, sample_fund_list=None):
+        return self.each_query.select_special_stock_fund_count(stock_name, sample_fund_list)

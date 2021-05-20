@@ -20,11 +20,15 @@ from fund_info.statistic import FundStatistic
 if __name__ == '__main__':
     each_statistic = FundStatistic()
 
+    # sample_fund_list = ['000001', '160133', '360014', '420002',
+    #                     '420102', '000409', '000418', '000746',
+    #                     '000751', '000884', '000991', '001043',
+    #                     '001054', '001104', '001410', '001473',
+    #                     '519714', '000003', '000011', '000029']
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index="2021-Q1",
-        filter_count=90)
+        filter_count=89)
     print('2020-Q4 top 100 股票')
-    # pprint(stock_top_list)
     print(len(stock_top_list))
     filter_list = []
 
@@ -33,19 +37,31 @@ if __name__ == '__main__':
         stock_sum = stock[1]
 
         stock_quarter_count_tuple = each_statistic.item_stock_fund_count(
-            stock_name)
-        last_count_tuple = stock_quarter_count_tuple[len(
-            stock_quarter_count_tuple) - 2]  # 选出上一个季度的
-        diff = stock_sum - last_count_tuple[0]
+            stock_name
+        )
+        try:
+            last_count_tuple = stock_quarter_count_tuple[len(
+                stock_quarter_count_tuple) - 2]
+        except:
+            print('该股票查询异常', stock_name)
+            continue
+
+        last_stock_sum = last_count_tuple[0]  # 选出上一个季度的
+        if len(stock_quarter_count_tuple) == 1:
+            last_stock_sum = 0
+
+        diff = stock_sum - last_stock_sum
 
         diff_percent = '{:.2%}'.format(
-            diff / last_count_tuple[0])
+            diff / last_stock_sum) if last_stock_sum != 0 else "+∞"
+
         flag = '📈' if diff > 0 else '📉'
         if diff == 0:
             flag = '⏸'
-        item_tuple = (stock_name, stock_sum, last_count_tuple[0],
+        item_tuple = (stock_name, stock_sum, last_stock_sum,
                       diff, diff_percent, flag)
-        if not float(diff_percent.rstrip('%')) < -20:
+
+        if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
             filter_list.append(item_tuple)
         print(item_tuple)
     pprint(filter_list)

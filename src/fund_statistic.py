@@ -17,30 +17,17 @@ from fund_info.statistic import FundStatistic
 
 # cursor = connect().cursor()
 
-if __name__ == '__main__':
+
+def stocks_compare(stock_list, fund_code_pool=None):
     each_statistic = FundStatistic()
-
-    fund_code_pool = ['000001', '160133', '360014', '420002',
-                      '420102', '000409', '000418', '000746',
-                      '000751', '000884', '000991', '001043',
-                      '001054', '001104', '001410', '001473',
-                      '519714', '000003', '000011', '000029']
-    stock_top_list = each_statistic.all_stock_fund_count(
-        quarter_index="2020-Q4",
-        fund_code_pool=fund_code_pool,
-        filter_count=0)
-    print('2020-Q4 top 100 股票')
-    pprint(stock_top_list)
-    print(len(stock_top_list))
-
     filter_list = []
-
-    for stock in stock_top_list:
+    for stock in stock_list:
         stock_name = stock[0]
         stock_sum = stock[1]
 
         stock_quarter_count_tuple = each_statistic.item_stock_fund_count(
-            stock_name
+            stock_name,
+            fund_code_pool
         )
         try:
             last_count_tuple = stock_quarter_count_tuple[len(
@@ -67,5 +54,25 @@ if __name__ == '__main__':
         if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
             filter_list.append(item_tuple)
         print(item_tuple)
+    return filter_list
+
+
+if __name__ == '__main__':
+    each_statistic = FundStatistic()
+
+    fund_code_pool = ['000001', '160133', '360014', '420002',
+                      '420102', '000409', '000418', '000746',
+                      '000751', '000884', '000991', '001043',
+                      '001054', '001104', '001410', '001473',
+                      '519714', '000003', '000011', '000029']
+    stock_top_list = each_statistic.all_stock_fund_count(
+        quarter_index="2021-Q1",
+        fund_code_pool=None,
+        filter_count=0)
+    # print('2020-Q4 top 100 股票')
+    # pprint(stock_top_list)
+    print(len(stock_top_list))
+
+    filter_list = stocks_compare(stock_top_list)
     pprint(filter_list)
     pprint(len(filter_list))

@@ -119,9 +119,10 @@ class FundQuery:
     def select_special_stock_fund_count(self, stock_name, fund_code_pool=None):
         stock_sql_join = '('
         for index in range(10):
+            escape_name = stock_name.replace("'", "\\'")
             stock_sql_join = stock_sql_join + \
-                "t.top_stock_%s_name = '%s' or " % (
-                    str(index), stock_name)
+                "t.top_stock_{0}_name = '{1}' or ".format(
+                    str(index), escape_name)
         stock_sql_join = stock_sql_join[0:-3] + ')'
         fund_code_list_sql = ''
         # 判断是否传入fund_code_pool
@@ -131,9 +132,10 @@ class FundQuery:
             list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "t.fund_code IN (" + list_str + ") AND "
         sql_query_sqecial_stock_fund_count = "SELECT count(1) as count, quarter_index FROM fund_morning_stock_info as t WHERE t.stock_position_total > 20 AND " + \
-            fund_code_list_sql + \
-            stock_sql_join + " GROUP BY t.quarter_index;"  # 大于20%股票持仓基金
+            fund_code_list_sql + stock_sql_join + \
+            " GROUP BY t.quarter_index;"  # 大于20%股票持仓基金
 
         self.cursor.execute(sql_query_sqecial_stock_fund_count)    # 执行sql语句
+        print(self.cursor._last_executed)
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results

@@ -20,16 +20,19 @@ from fund_info.statistic import FundStatistic
 if __name__ == '__main__':
     each_statistic = FundStatistic()
 
-    # sample_fund_list = ['000001', '160133', '360014', '420002',
-    #                     '420102', '000409', '000418', '000746',
-    #                     '000751', '000884', '000991', '001043',
-    #                     '001054', '001104', '001410', '001473',
-    #                     '519714', '000003', '000011', '000029']
+    fund_code_pool = ['000001', '160133', '360014', '420002',
+                      '420102', '000409', '000418', '000746',
+                      '000751', '000884', '000991', '001043',
+                      '001054', '001104', '001410', '001473',
+                      '519714', '000003', '000011', '000029']
     stock_top_list = each_statistic.all_stock_fund_count(
-        quarter_index="2021-Q1",
-        filter_count=89)
+        quarter_index="2020-Q4",
+        fund_code_pool=fund_code_pool,
+        filter_count=0)
     print('2020-Q4 top 100 股票')
+    pprint(stock_top_list)
     print(len(stock_top_list))
+
     filter_list = []
 
     for stock in stock_top_list:

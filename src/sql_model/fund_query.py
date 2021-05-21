@@ -91,7 +91,7 @@ class FundQuery:
         self.cursor.execute(sql_update, [total_asset, fund_code])
         self.connect_instance.commit()
 
-    def select_top_10_stock(self, quarter_index=None, sample_fund_list=None):
+    def select_top_10_stock(self, quarter_index=None, fund_code_pool=None):
         stock_sql_join = ''
         for index in range(10):
             stock_sql_join = stock_sql_join + \
@@ -99,11 +99,11 @@ class FundQuery:
                     str(index), str(index)) + ","
         stock_sql_join = stock_sql_join[0:-1]
         fund_code_list_sql = ''
-        # 判断是否传入sample_fund_list
-        if isinstance(sample_fund_list, list):
-            if len(sample_fund_list) == 0:
+        # 判断是否传入fund_code_pool
+        if isinstance(fund_code_pool, list):
+            if len(fund_code_pool) == 0:
                 return ()
-            list_str = ', '.join(sample_fund_list)
+            list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "AND t.fund_code IN (" + list_str + ")"
         sql_query_quarter = "SELECT t.fund_code," + stock_sql_join + \
             " FROM fund_morning_stock_info as t WHERE t.quarter_index = %s AND t.stock_position_total > 20 " + \
@@ -116,7 +116,7 @@ class FundQuery:
         return results
 
     # 分组查询特定股票的每个季度基金持有总数
-    def select_special_stock_fund_count(self, stock_name, sample_fund_list=None):
+    def select_special_stock_fund_count(self, stock_name, fund_code_pool=None):
         stock_sql_join = '('
         for index in range(10):
             stock_sql_join = stock_sql_join + \
@@ -124,11 +124,11 @@ class FundQuery:
                     str(index), stock_name)
         stock_sql_join = stock_sql_join[0:-3] + ')'
         fund_code_list_sql = ''
-        # 判断是否传入sample_fund_list
-        if isinstance(sample_fund_list, list):
-            if len(sample_fund_list) == 0:
+        # 判断是否传入fund_code_pool
+        if isinstance(fund_code_pool, list):
+            if len(fund_code_pool) == 0:
                 return ()
-            list_str = ', '.join(sample_fund_list)
+            list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "t.fund_code IN (" + list_str + ") AND "
         sql_query_sqecial_stock_fund_count = "SELECT count(1) as count, quarter_index FROM fund_morning_stock_info as t WHERE t.stock_position_total > 20 AND " + \
             fund_code_list_sql + \

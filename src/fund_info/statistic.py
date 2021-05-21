@@ -30,11 +30,22 @@ class FundStatistic:
         self.quarter_index = quarter_index
         self.each_query = FundQuery()
 
-    def all_stock_fund_count(self, *, quarter_index=None, sample_fund_list=None, filter_count=100):
+    def all_stock_fund_count(self, *, quarter_index=None, fund_code_pool=None, filter_count=100):
+        """查询某一个季度基金的十大持仓，并对持仓股票进行汇总统计，并根据filter_count进行过滤
+
+        Args:
+            quarter_index (string, optional): [description]. Defaults to None.取self.quarter_index
+            fund_code_pool (string[], optional): [description]. Defaults to None. 传入查询的基金池，为None默认查询全部
+            filter_count (int, optional): [description]. Defaults to 100. 过滤门槛，过滤掉一些持仓低的股票
+
+        Returns:
+            tuple[]: 每只股票的名称，以及对应持仓基金个数的list
+        """
+
         quarter_index = quarter_index if quarter_index else self.quarter_index
         results = self.each_query.select_top_10_stock(
             quarter_index,
-            sample_fund_list
+            fund_code_pool
         )
         code_dict = dict()
         for result in results:
@@ -59,5 +70,5 @@ class FundStatistic:
         return list
 
     # 分组查询特定股票的每个季度基金持有总数
-    def item_stock_fund_count(self, stock_name, sample_fund_list=None):
-        return self.each_query.select_special_stock_fund_count(stock_name, sample_fund_list)
+    def item_stock_fund_count(self, stock_name, fund_code_pool=None):
+        return self.each_query.select_special_stock_fund_count(stock_name, fund_code_pool)

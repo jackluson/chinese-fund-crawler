@@ -7,6 +7,7 @@ cached-property==1.5.2
 certifi==2020.12.5
 chardet==3.0.4
 cycler==0.10.0
+et-xmlfile==1.1.0
 fake-useragent==0.1.11
 gast==0.4.0
 google-pasta==0.2.0
@@ -25,6 +26,7 @@ matplotlib==3.3.3
 ntplib==0.3.4
 numpy==1.19.5
 opencv-python==4.5.1.48
+openpyxl==3.0.7
 pandas==1.1.5
 Pillow==8.1.0
 protobuf==3.14.0

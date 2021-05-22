@@ -141,4 +141,12 @@
 
 <img src="./screenshot/fund_statistic.png" />
 
+## 数据分析
+
+在基于上面的汇总数据，做出如下分析结果，得到 2021-Q1 与 2020-Q4 的的 Top50 持仓结果对比：
+
+<img src="./screenshot/top_50_2021_q1_vs_2020_q4.png" />
+
+> 该 excel 文件在 `output/xlsx/top100-2021-Q1-vs-2020-Q4.xlsx`下
+
 如果有问题，有兴趣的话，欢迎提 issue，私聊，star。

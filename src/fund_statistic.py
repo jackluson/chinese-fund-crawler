@@ -12,6 +12,7 @@ Copyright (c) 2020 Camel Lu
 import pymysql
 from pprint import pprint
 from db.connect import connect
+import pandas as pd
 from sql_model.fund_query import FundQuery
 from fund_info.statistic import FundStatistic
 
@@ -45,15 +46,18 @@ def stocks_compare(stock_list, fund_code_pool=None):
         diff_percent = '{:.2%}'.format(
             diff / last_stock_sum) if last_stock_sum != 0 else "+∞"
 
-        flag = '📈' if diff > 0 else '📉'
+        # flag = '📈' if diff > 0 else '📉'
+        # if diff == 0:
+        #     flag = '⏸'
+        flag = 'up' if diff > 0 else 'down'
         if diff == 0:
-            flag = '⏸'
+            flag = '='
         item_tuple = (stock_name, stock_sum, last_stock_sum,
                       diff, diff_percent, flag)
 
-        if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
-            filter_list.append(item_tuple)
-        print(item_tuple)
+        # if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
+        filter_list.append(item_tuple)
+        # print(item_tuple)
     return filter_list
 
 
@@ -68,11 +72,17 @@ if __name__ == '__main__':
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index="2021-Q1",
         fund_code_pool=None,
-        filter_count=0)
+        filter_count=90)
     # print('2020-Q4 top 100 股票')
     # pprint(stock_top_list)
-    print(len(stock_top_list))
+    # print(len(stock_top_list))
 
     filter_list = stocks_compare(stock_top_list)
-    pprint(filter_list)
-    pprint(len(filter_list))
+
+    # pprint(filter_list)
+    # pprint(len(filter_list))
+    df_filter_list = pd.DataFrame(filter_list, columns=[
+        '名称', '2021-Q1持有数量（只）', '2020-Q4持有数量（只）', '环比', '环比百分比', '升Or降'])
+    print(df_filter_list)
+    df_filter_list.to_excel(
+        './output/xlsx/top100-2021_q1_vs_2020_q4.xlsx', sheet_name='top100')

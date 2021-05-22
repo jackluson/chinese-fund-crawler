@@ -136,6 +136,6 @@ class FundQuery:
             " GROUP BY t.quarter_index;"  # 大于20%股票持仓基金
 
         self.cursor.execute(sql_query_sqecial_stock_fund_count)    # 执行sql语句
-        print(self.cursor._last_executed)
+        # print(self.cursor._last_executed)
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results

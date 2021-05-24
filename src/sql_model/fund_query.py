@@ -7,6 +7,7 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
+import time
 from threading import Lock
 from db.connect import connect
 
@@ -55,6 +56,50 @@ class FundQuery:
         results = self.cursor.fetchall()    # 获取查询的所有记录
         self.lock.release()
         return results
+
+    def select_high_score_funds(self, *, quarter_index=None):
+        """获取高分基金池
+
+        Args:
+            quarter_index (string, optional): 查询季度. Defaults to None.
+
+        Returns:
+            []tuple: 高分基金池
+        """
+        last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
+        last_year_date = time.strftime('%Y-%m-%d', last_year_time)
+
+        if quarter_index == None:
+            quarter_index = self.quarter_index
+        sql = "SELECT a.fund_code, b.fund_name, a.quarter_index, a.total_asset , a.manager_start_date, \
+                    a.investname_style, a.three_month_retracement, a.june_month_retracement, a.risk_assessment_sharpby,\
+                    a.risk_statistics_alpha, a.risk_statistics_beta, a.risk_statistics_r_square, a.risk_assessment_standard_deviation,\
+                    a.risk_assessment_risk_coefficient, a.risk_rating_2, a.risk_rating_3, a.risk_rating_5, a.morning_star_rating_5,\
+                    a.morning_star_rating_3, a.stock_position_total, a.stock_position_ten FROM fund_morning_quarter as a \
+                    LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
+                    WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E'  AND a.quarter_index = %s AND \
+                    a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
+                    AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s ORDER BY a.risk_assessment_sharpby DESC , a.three_month_retracement DESC "
+        self.lock.acquire()
+        self.cursor.execute(sql, [quarter_index, last_year_date])    # 执行sql语句
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        self.lock.release()
+        return results
+
+    def select_certain_condition_funds(self, *, quarter_index=None, morning_star_rating_5=None, morning_star_rating_3=None):
+        if quarter_index == None:
+            quarter_index = self.quarter_index
+        print("condition", quarter_index, morning_star_rating_5)
+        sql = "SELECT a.fund_code, b.fund_name, a.quarter_index, a.total_asset , a.manager_start_date, \
+            a.investname_style, a.three_month_retracement, a.june_month_retracement, a.risk_assessment_sharpby,\
+            a.risk_statistics_alpha, a.risk_statistics_beta, a.risk_statistics_r_square, a.risk_assessment_standard_deviation,\
+            a.risk_assessment_risk_coefficient, a.risk_rating_2, a.risk_rating_3, a.risk_rating_5, a.morning_star_rating_5,\
+            a.morning_star_rating_3, a.stock_position_total, a.stock_position_ten FROM fund_morning_quarter as a \
+            LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
+            WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E'  AND a.quarter_index = '2021-Q1' AND \
+            a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
+            AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < '2020-05-24'"
+        # TODO: finish
 
     # 筛选同类基金，除了A类
     def select_similar_fund(self, similar_name):

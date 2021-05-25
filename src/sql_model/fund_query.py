@@ -12,6 +12,26 @@ from threading import Lock
 from db.connect import connect
 
 
+def format_sql(table_name, field_dict, prefix="AND"):
+    print("field_dict", field_dict['name'])
+    sql_str = ''
+    field_name = field_dict.get('name')
+    field_value = field_dict.get('value')
+    operator = field_dict.get('operator')
+    if not field_name or not field_value or not operator:
+        return sql_str
+    format_dict = {
+        "prefix": prefix,
+        'table_name': table_name,
+        'field_name': field_name,
+        "operator": operator,
+        "value": field_value
+    }
+    sql_str = '{prefix} {table_name}.{field_name} {operator} {value}'.format(
+        **format_dict)
+    return sql_str
+
+
 class FundQuery:
 
     def __init__(self):
@@ -86,20 +106,40 @@ class FundQuery:
         self.lock.release()
         return results
 
-    def select_certain_condition_funds(self, *, quarter_index=None, morning_star_rating_5=None, morning_star_rating_3=None):
+    def select_certain_condition_funds(self, *, quarter_index=None, morning_star_rating_5=None, morning_star_rating_3=None, manager_start_date=None):
         if quarter_index == None:
             quarter_index = self.quarter_index
-        print("condition", quarter_index, morning_star_rating_5)
-        sql = "SELECT a.fund_code, b.fund_name, a.quarter_index, a.total_asset , a.manager_start_date, \
-            a.investname_style, a.three_month_retracement, a.june_month_retracement, a.risk_assessment_sharpby,\
-            a.risk_statistics_alpha, a.risk_statistics_beta, a.risk_statistics_r_square, a.risk_assessment_standard_deviation,\
-            a.risk_assessment_risk_coefficient, a.risk_rating_2, a.risk_rating_3, a.risk_rating_5, a.morning_star_rating_5,\
-            a.morning_star_rating_3, a.stock_position_total, a.stock_position_ten FROM fund_morning_quarter as a \
+        last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
+        last_year_date = time.strftime('%Y-%m-%d', last_year_time)
+        morning_star_rating_3_sql = format_sql('a', {
+            'name': 'morning_star_rating_3',
+            **morning_star_rating_3
+        })
+        # site = {"name": "菜鸟教程", "url": ""}
+        # print("网站名：{name}, 地址 {url}".format(**site))
+        # if morning_star_rating_5 not None:
+
+        sql = "SELECT a.fund_code FROM fund_morning_quarter as a \
             LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
-            WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E'  AND a.quarter_index = '2021-Q1' AND \
-            a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
-            AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < '2020-05-24'"
-        # TODO: finish
+            WHERE a.quarter_index = '{quarter_index}' AND b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E' {morning_star_rating_5} {morning_star_rating_3} AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
+            AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < '{manager_start_date}'"
+
+        format_dict = {
+            'quarter_index': quarter_index,
+            'morning_star_rating_5': "AND a.morning_star_rating_5 >= 3",
+            'morning_star_rating_3': morning_star_rating_3_sql,
+            'manager_start_date': str(last_year_date)
+        }
+        sql_format = sql.format(**format_dict)
+        self.lock.acquire()
+        self.cursor.execute(sql_format)    # 执行sql语句
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        self.lock.release()
+        fund_pool = []
+        for item in results:
+            fund_code = item[0]
+            fund_pool.append(fund_code)
+        return fund_pool
 
     # 筛选同类基金，除了A类
     def select_similar_fund(self, similar_name):

@@ -22,7 +22,7 @@ class FundStatistic:
     def __init__(self):
       # 统计上一个季度
         last_quarter_time = time.localtime(time.time() - 3 * 30 * 24 * 3600)
-        time.strftime("%m-%d", last_quarter_time)
+        # time.strftime("%m-%d", last_quarter_time)
         year = time.strftime("%Y", last_quarter_time)
         date = time.strftime("%m-%d", last_quarter_time)
         index = get_season_index(date)
@@ -72,3 +72,15 @@ class FundStatistic:
     # 分组查询特定股票的每个季度基金持有总数
     def item_stock_fund_count(self, stock_name, fund_code_pool=None):
         return self.each_query.select_special_stock_fund_count(stock_name, fund_code_pool)
+
+    def select_fund_pool(self, *, morning_star_rating_5="", morning_star_rating_3="", **args):
+        # print("morning_star_rating_5", morning_star_rating_5)
+        # print("morning_star_rating_3", morning_star_rating_3)
+        # print("args", args)
+        # morning_star_rating_5 = 5
+
+        return self.each_query.select_certain_condition_funds(
+            morning_star_rating_5=morning_star_rating_5,
+            morning_star_rating_3=morning_star_rating_3,
+            **args
+        )

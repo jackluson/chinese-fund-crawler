@@ -132,7 +132,7 @@ class FundSpider:
         self.company = self.get_element_text_by_xpath(
             "//ul[@id='qt_management']/li[4]/span[@class='col2 comp']/a", 'qt_management')
 
-    # 获取基金经理信息
+    # 获取基金经理信息（多位在任基金经理，只需第一位）
     def get_fund_manager_info(self):
         try:
             # 基金经理

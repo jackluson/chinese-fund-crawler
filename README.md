@@ -147,4 +147,8 @@
 
 > 该 excel 文件在 `output/xlsx/top100-2021-Q1-vs-2020-Q4.xlsx`下
 
+欢迎扫描下方微信二维码（anchor_data）,关注获取更多维度统计数据
+
+<img width=480  src="./screenshot/qrcode_merge.png" />
+
 如果有问题，有兴趣的话，欢迎提 issue，私聊，star。

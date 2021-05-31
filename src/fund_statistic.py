@@ -8,7 +8,7 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2020 Camel Lu
 '''
-
+import time
 from pprint import pprint
 import pandas as pd
 from fund_info.statistic import FundStatistic
@@ -72,10 +72,12 @@ if __name__ == '__main__':
         'value': 5,
         'operator': '='
     }
+    last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
+    last_year_date = time.strftime('%Y-%m-%d', last_year_time)
     condition_dict = {
         'morning_star_rating_5': morning_star_rating_5_condition,
         'morning_star_rating_3': morning_star_rating_3_condition,
-        'manager_start_date': '2020-05-25'
+        # 'manager_start_date': '2020-05-25'
     }
     fund_code_pool = each_statistic.select_fund_pool(
         **condition_dict,
@@ -89,10 +91,10 @@ if __name__ == '__main__':
     pprint(stock_top_list)
     print(len(stock_top_list))
 
-    filter_list = stocks_compare(stock_top_list, fund_code_pool)
+    # filter_list = stocks_compare(stock_top_list, fund_code_pool)
 
-    pprint(filter_list)
-    pprint(len(filter_list))
+    # pprint(filter_list)
+    # pprint(len(filter_list))
     # df_filter_list = pd.DataFrame(filter_list, columns=[
     #     '名称', '2021-Q1持有数量（只）', '2020-Q4持有数量（只）', '环比', '环比百分比', '升Or降'])
     # print(df_filter_list)

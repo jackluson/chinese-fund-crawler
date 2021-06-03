@@ -9,6 +9,7 @@ Copyright (c) 2021 Camel Lu
 '''
 import time
 from threading import Lock
+from utils.index import get_last_quarter_str
 from db.connect import connect
 
 
@@ -36,19 +37,20 @@ def format_sql(table_name, field_name, field_dict, prefix="AND"):
 class FundQuery:
 
     def __init__(self):
-        self.quarter_index = '2021-Q1'
+        self.quarter_index = get_last_quarter_str()
         connect_instance = connect()
         self.connect_instance = connect_instance
         self.cursor = connect_instance.cursor()
         self.lock = Lock()
 
-    # 需要爬取季度性信息的基金(B,C类基金除外，因为B、C基金大部分信息与A类一致)
+    # 筛选出要更新的基金季度性信息的基金(B,C类基金除外，因为B、C基金大部分信息与A类一致)的总数
     def get_crawler_quarter_fund_total(self):
         # 过滤没有股票持仓的基金
         sql_count = "SELECT COUNT(1) FROM fund_morning_base as a \
         WHERE a.fund_cat NOT LIKE '%%货币%%' \
         AND a.fund_cat NOT LIKE '%%纯债基金%%' \
         AND a.fund_cat NOT LIKE '目标日期' \
+        AND a.is_archive = 0 \
         AND a.fund_name NOT LIKE '%%C' \
         AND a.fund_name NOT LIKE '%%B' \
         AND a.fund_cat NOT LIKE '%%短债基金%%' \
@@ -58,7 +60,7 @@ class FundQuery:
         count = self.cursor.fetchone()
         return count[0]
 
-    # 筛选基金季度性信息的基金
+    # 筛选出要更新的基金季度性信息的基金
     def select_quarter_fund(self, page_start, page_limit):
         sql = "SELECT t.fund_code,\
             t.morning_star_code, t.fund_name, t.fund_cat \
@@ -67,6 +69,7 @@ class FundQuery:
             AND t.fund_cat NOT LIKE '%%纯债基金%%' \
             AND t.fund_cat NOT LIKE '目标日期' \
             AND t.fund_cat NOT LIKE '%%短债基金%%' \
+            AND t.is_archive = 0 \
             AND t.fund_name NOT LIKE '%%C' \
             AND t.fund_name NOT LIKE '%%B' \
             AND t.fund_code	NOT IN( SELECT fund_code FROM fund_morning_quarter as b \

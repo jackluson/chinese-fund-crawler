@@ -14,7 +14,7 @@ import sys
 from pprint import pprint
 sys.path.append('../')
 sys.path.append(os.getcwd() + '/src')
-from utils.index import get_season_index
+from utils.index import get_quarter_index
 from sql_model.fund_query import FundQuery
 
 
@@ -25,7 +25,7 @@ class FundStatistic:
         # time.strftime("%m-%d", last_quarter_time)
         year = time.strftime("%Y", last_quarter_time)
         date = time.strftime("%m-%d", last_quarter_time)
-        index = get_season_index(date)
+        index = get_quarter_index(date)
         quarter_index = year + '-Q' + str(index)
         self.quarter_index = quarter_index
         self.each_query = FundQuery()

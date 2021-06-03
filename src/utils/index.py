@@ -45,7 +45,7 @@ def parse_csv(datafile):
     return data
 
 
-def get_season_index(input_date):
+def get_quarter_index(input_date):
     year = time.strftime("%Y", time.localtime())
     boundary_date_list = ['03-31', '06-30', '09-30', '12-31']
 
@@ -60,3 +60,12 @@ def get_season_index(input_date):
             index = idx + 1
             break
     return index
+
+
+def get_last_quarter_str():
+    last_quarter_time = time.localtime(time.time() - 3 * 30 * 24 * 3600)
+    year = time.strftime("%Y", last_quarter_time)
+    date = time.strftime("%m-%d", last_quarter_time)
+    index = get_quarter_index(date)
+    quarter_index_str = year + '-Q' + str(index)
+    return quarter_index_str

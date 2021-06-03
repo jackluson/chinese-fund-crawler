@@ -11,14 +11,14 @@ Copyright (c) 2020 Camel Lu
 import re
 from time import sleep
 from bs4 import BeautifulSoup
-from utils.index import get_star_count, get_season_index
+from utils.index import get_star_count, get_quarter_index, get_last_quarter_str
 from selenium.common.exceptions import NoSuchElementException
 
 
 class FundSpider:
     # 初始化定义，利用基金代码、基金名称进行唯一化
     def __init__(self, code, namecode, name, chrome_driver):
-        self.quarter_index = '2021-Q1'
+        self.quarter_index = get_last_quarter_str()
         self.update_date = None  # 数据更新时间，默认取资产配置更新时间
         self.fund_code = code  # 基金代码，需要初始化赋值
         self.fund_name = name  # 基金名称，需要初始化赋值
@@ -313,5 +313,5 @@ class FundSpider:
             return
         self.update_date = update_date
         split_dates = self.update_date.split('-', 1)
-        quarter_index = get_season_index(split_dates[1])
+        quarter_index = get_quarter_index(split_dates[1])
         return split_dates[0] + '-Q' + str(quarter_index)

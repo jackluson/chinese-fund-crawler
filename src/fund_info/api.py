@@ -19,12 +19,14 @@ from utils.file_op import write_fund_json_data
 
 
 class FundApier:
-    def __init__(self, code, end_date, platform='ai_fund'):
+    def __init__(self, code, *, end_date=None, platform='ai_fund'):
         self.fund_code = code
         self.cur_date = time.strftime("%Y-%m-%d", time.localtime(time.time()))
         self.end_date = end_date
         self.platform = platform
         self.total_asset = None
+        self.buy_status = None
+        self.sell_status = None
         # 默认的爱基金
         self.file_dir = os.getcwd() + '/output/json/' + self.platform + \
             '/' + self.cur_date + '/'
@@ -54,7 +56,6 @@ class FundApier:
                 print(asset_str, "not a number")
 
     # 基金信息--来源爱基金
-
     def get_base_info_ai(self):
         url = "http://fund.10jqka.com.cn/data/client/myfund/{0}".format(
             self.fund_code)
@@ -106,7 +107,6 @@ class FundApier:
                 pprint(res_json)
                 if res_json.get('Msg') == 'OK' and fund_scope != None:
                     end_date = res_json.get('DealDate')
-                    fund_scope = res_json.get('FundScope')
                     total_asset = fund_scope[0:-1]
                     self.write_info_in_json(end_date, res_json)
                     try:
@@ -125,6 +125,38 @@ class FundApier:
             print('code:3', self.fund_code)
             raise('中断')
 
+    def get_analyse_info_hz(self):
+            url = "https://www.myfund.com/webinterface/Bamboo.ashx?command={0}".format(
+                'singlefundAnalyse')
+            headers = {
+                'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
+            }
+            payload = {
+                'fundcode': self.fund_code,
+            }
+            res = requests.post(url, headers=headers, data=payload)
+            res.encoding = "utf-8"
+            time.sleep(1)
+            try:
+                if res.status_code == 200:
+                    res_json = res.json()
+                    buy_status = res_json.get('BuyStatus')
+                    sell_status = res_json.get('SellStatus')
+                    pprint(res_json)
+                    if res_json.get('Msg') == 'OK' and buy_status != None:
+                        self.sell_status = sell_status
+                        self.buy_status = buy_status
+                    else:
+                        pprint(res_json)
+                        print('code:1', self.fund_code)
+                else:
+                    pprint(res.content)
+                    print('code:2', self.fund_code)
+                    raise('中断')
+            except:
+                print('code:3', self.fund_code)
+                raise('中断')
+
     def write_info_in_json(self, end_date, json_data):
         filename = '{fund_code}{end_date}-base.json'.format(
             fund_code=self.fund_code,
@@ -137,5 +169,6 @@ class FundApier:
 
 
 if __name__ == '__main__':
-    fund_api = FundApier('675113', '2021-05-07', 'zh_fund')
-    fund_api.get_base_info_hz()
+    fund_api = FundApier('000421', end_date='2021-05-31',)
+    # fund_api.get_analyse_info_hz()
+    # print("fund_api", fund_api)

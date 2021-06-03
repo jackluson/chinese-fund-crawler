@@ -30,13 +30,13 @@ if __name__ == '__main__':
             fund_code = c_class_result[0]
             fund_name = c_class_result[1]
             platform = 'zh_fund' if '封闭' in fund_name else 'ai_fund'
-            each_fund = FundApier(fund_code, '2021-05-07', platform)
+            each_fund = FundApier(fund_code, end_date='2021-05-07', platform=platform)
 
             total_asset = each_fund.get_total_asset()
             # 如果在爱基金平台找不到，则到展恒基金找
             if total_asset == None and platform == 'ai_fund':
                 print("fund_code", i, fund_name, fund_code)
-                each_fund = FundApier(fund_code, '2021-05-07', 'zh_fund')
+                each_fund = FundApier(fund_code, end_date='2021-05-07', platform='zh_fund')
                 total_asset = each_fund.get_total_asset()
 
             fund_query.update_fund_total_asset(fund_code, total_asset)

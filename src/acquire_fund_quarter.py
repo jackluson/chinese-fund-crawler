@@ -32,32 +32,28 @@ lock = Lock()
 
 
 def get_total_asset(fund_code, platform):
-    each_fund = FundApier(fund_code, '2021-05-07', platform)
+    each_fund = FundApier(fund_code, end_date='2021-05-07', platform=platform)
     total_asset = each_fund.get_total_asset()
     # 如果在爱基金平台找不到，则到展恒基金找
     if total_asset == None and platform == 'ai_fund':
         print("fund_code", total_asset, fund_code)
-        each_fund = FundApier(fund_code, '2021-05-10', 'zh_fund')
+        each_fund = FundApier(fund_code, end_date='2021-05-10', platform='zh_fund')
         total_asset = each_fund.get_total_asset()
-
-
 if __name__ == '__main__':
 
     each_fund_query = FundQuery()
-
     record_total = each_fund_query.get_crawler_quarter_fund_total()    # 获取记录条数
+    print('record_total', record_total)
+    exit()
     IdWorker = IdWorker()
-    page_limit = 5
     page_start = 0
     # error_funds = []
     # 设置表头
     result_dir = './output/'
     fund_csv = FundCSV(result_dir)
-
     if page_start == 0:
         fund_csv.write_season_catch_fund(True)
         fund_csv.write_abnormal_url_fund(True)
-
     # df = pandas.read_csv(
     #     result_dir + 'fund_morning_quarter_error.csv', usecols=[0, 2, 4])
     # fund_list = df.values.tolist()

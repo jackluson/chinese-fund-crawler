@@ -96,8 +96,7 @@ def get_fund_list():
         data = chrome_driver.page_source
         # 利用BeautifulSoup解析网页源代码
         bs = BeautifulSoup(data, 'lxml')
-        class_list = ['gridItem', 'gridAlternateItem']  # 数据在这两个类下面
-
+        class_list = ['gridItem', 'gridAlternateItem']  # 数据在这两个类下
         # 取出所有类的信息，并保存到对应的列表里
         for i in range(len(class_list)):
             for tr in bs.find_all('tr', {'class': class_list[i]}):

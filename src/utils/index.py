@@ -69,3 +69,9 @@ def get_last_quarter_str():
     index = get_quarter_index(date)
     quarter_index_str = year + '-Q' + str(index)
     return quarter_index_str
+
+def get_quarter_date(quarter_index_str):
+    year = quarter_index_str.split('-')[0]
+    boundary_date_list = ['03-31', '06-30', '09-30', '12-31']
+    quarter_index = quarter_index_str.split('-')[1][1:]
+    return year + '-' + boundary_date_list[int(quarter_index) - 1]

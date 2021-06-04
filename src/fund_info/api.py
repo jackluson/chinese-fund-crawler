@@ -42,7 +42,7 @@ class FundApier:
         if self.platform == 'ai_fund':
             return self.get_base_info_ai()
         elif self.platform == 'zh_fund':
-            return self.get_base_info_hz()
+            return self.get_base_info_zh()
 
     def get_asset_from_json(self):
         with open(self.file_path) as json_file:
@@ -88,7 +88,7 @@ class FundApier:
             raise('中断')
 
     # 基金信息--来源展恒基金
-    def get_base_info_hz(self):
+    def get_base_info_zh(self):
         url = "https://www.myfund.com/webinterface/Bamboo.ashx?command={0}".format(
             'fundInfoHead_NEW')
         headers = {
@@ -125,7 +125,7 @@ class FundApier:
             print('code:3', self.fund_code)
             raise('中断')
 
-    def get_analyse_info_hz(self):
+    def get_analyse_info_zh(self):
             url = "https://www.myfund.com/webinterface/Bamboo.ashx?command={0}".format(
                 'singlefundAnalyse')
             headers = {
@@ -142,7 +142,6 @@ class FundApier:
                     res_json = res.json()
                     buy_status = res_json.get('BuyStatus')
                     sell_status = res_json.get('SellStatus')
-                    pprint(res_json)
                     if res_json.get('Msg') == 'OK' and buy_status != None:
                         self.sell_status = sell_status
                         self.buy_status = buy_status
@@ -170,5 +169,5 @@ class FundApier:
 
 if __name__ == '__main__':
     fund_api = FundApier('000421', end_date='2021-05-31',)
-    # fund_api.get_analyse_info_hz()
+    # fund_api.get_analyse_info_zh()
     # print("fund_api", fund_api)

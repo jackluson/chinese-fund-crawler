@@ -9,7 +9,7 @@ Copyright (c) 2021 Camel Lu
 '''
 import time
 from threading import Lock
-from utils.index import get_last_quarter_str
+from utils.index import get_last_quarter_str, get_quarter_date
 from db.connect import connect
 
 
@@ -38,6 +38,7 @@ class FundQuery:
 
     def __init__(self):
         self.quarter_index = get_last_quarter_str()
+        self.quarter_date = get_quarter_date(self.quarter_index)
         connect_instance = connect()
         self.connect_instance = connect_instance
         self.cursor = connect_instance.cursor()
@@ -51,12 +52,13 @@ class FundQuery:
         AND a.fund_cat NOT LIKE '%%纯债基金%%' \
         AND a.fund_cat NOT LIKE '目标日期' \
         AND a.is_archive = 0 \
+        AND a.found_date <= %s \
         AND a.fund_name NOT LIKE '%%C' \
         AND a.fund_name NOT LIKE '%%B' \
         AND a.fund_cat NOT LIKE '%%短债基金%%' \
         AND a.fund_code	NOT IN( SELECT fund_code FROM fund_morning_quarter as b \
         WHERE b.quarter_index = %s);"
-        self.cursor.execute(sql_count, [self.quarter_index])
+        self.cursor.execute(sql_count, [self.quarter_date, self.quarter_index])
         count = self.cursor.fetchone()
         return count[0]
 
@@ -69,6 +71,7 @@ class FundQuery:
             AND t.fund_cat NOT LIKE '%%纯债基金%%' \
             AND t.fund_cat NOT LIKE '目标日期' \
             AND t.fund_cat NOT LIKE '%%短债基金%%' \
+            AND t.found_date <= %s \
             AND t.is_archive = 0 \
             AND t.fund_name NOT LIKE '%%C' \
             AND t.fund_name NOT LIKE '%%B' \
@@ -76,7 +79,7 @@ class FundQuery:
             WHERE b.quarter_index = %s) LIMIT %s, %s;"
         self.lock.acquire()
         self.cursor.execute(
-            sql, [self.quarter_index, page_start, page_limit])    # 执行sql语句
+            sql, [self.quarter_date, self.quarter_index, page_start, page_limit])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
         self.lock.release()
         return results

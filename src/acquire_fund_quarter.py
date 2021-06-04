@@ -44,7 +44,6 @@ if __name__ == '__main__':
     each_fund_query = FundQuery()
     record_total = each_fund_query.get_crawler_quarter_fund_total()    # 获取记录条数
     print('record_total', record_total)
-    exit()
     IdWorker = IdWorker()
     page_start = 0
     # error_funds = []
@@ -198,19 +197,19 @@ if __name__ == '__main__':
         chrome_driver.close()
     threaders = []
     start_time = time()
-    steps = [{
-        "start": 0,
-        "end": 1000
-    }, {
-        "start": 1000,
-        "end": 2000
-    }, {
-        "start": 2000,
-        "end": 3000
-    }, {
-        "start": 3500,
-        "end": record_total
-    }]
+    # steps = [{
+    #     "start": 0,
+    #     "end": 1000
+    # }, {
+    #     "start": 1000,
+    #     "end": 2000
+    # }, {
+    #     "start": 2000,
+    #     "end": 3000
+    # }, {
+    #     "start": 3500,
+    #     "end": record_total
+    # }]
     thread_count = 4
     step_num = record_total / thread_count
     for i in range(thread_count):

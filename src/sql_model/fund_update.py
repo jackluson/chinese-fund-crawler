@@ -34,3 +34,11 @@ class FundUpdate:
       sql_update_archive = "UPDATE fund_morning_base SET is_archive = %s WHERE fund_code = %s;"
       self.cursor.execute(sql_update_archive, (archive_value, code))
       self.connect_instance.commit()
+
+    # 更新基金资产 -- fund_morning_quarter
+    def update_fund_total_asset(self, fund_code, total_asset, quarter_index=None):
+        if quarter_index == None:
+            quarter_index = self.quarter_index
+        sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s AND quarter_index = %s ;"
+        self.cursor.execute(sql_update, [total_asset, fund_code, quarter_index])
+        self.connect_instance.commit()

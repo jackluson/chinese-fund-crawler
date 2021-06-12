@@ -39,6 +39,7 @@ def get_total_asset(fund_code, platform):
         print("fund_code", total_asset, fund_code)
         each_fund = FundApier(fund_code, end_date='2021-05-10', platform='zh_fund')
         total_asset = each_fund.get_total_asset()
+    return total_asset
 if __name__ == '__main__':
 
     each_fund_query = FundQuery()
@@ -185,10 +186,12 @@ if __name__ == '__main__':
                         quarterly_dict['fund_code'] = item_code
                         quarterly_dict['total_asset'] = total_asset
                         quarterly_dict['id'] = snow_flake_id + i + 1
+                        #入库
                         fund_insert.fund_quarterly_info(quarterly_dict)
                         if float(stock_position_total) > 0:
                             stock_dict['fund_code'] = item_code
                             stock_dict['id'] = snow_flake_id + i + 1
+                            #入库
                             fund_insert.fund_stock_info(stock_dict)
                 # pprint(fundDict)
             page_start = page_start + page_limit

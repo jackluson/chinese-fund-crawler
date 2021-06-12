@@ -224,12 +224,6 @@ class FundQuery:
         c_class_result = self.cursor.fetchone()
         return c_class_result
 
-    # 更新基金资产 -- fund_morning_quarter
-    def update_fund_total_asset(self, fund_code, total_asset):
-        sql_update = "UPDATE fund_morning_quarter SET total_asset = %s WHERE fund_code = %s;"
-        self.cursor.execute(sql_update, [total_asset, fund_code])
-        self.connect_instance.commit()
-
     def select_top_10_stock(self, quarter_index=None, fund_code_pool=None):
         stock_sql_join = ''
         for index in range(10):
@@ -276,5 +270,14 @@ class FundQuery:
 
         self.cursor.execute(sql_query_sqecial_stock_fund_count)    # 执行sql语句
         # print(self.cursor._last_executed)
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        return results
+
+    # total_asset 为null的基金
+    def select_total_asset_is_null(self, quarter_index=None):
+        if quarter_index == None:
+            quarter_index = self.quarter_index
+        sql = 'SELECT fund_code FROM fund_morning_quarter as a WHERE a.quarter_index = %s AND a.total_asset IS NULL'
+        self.cursor.execute(sql, [quarter_index])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results

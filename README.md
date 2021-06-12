@@ -71,7 +71,7 @@
 
 ## 本地运行
 
-> 本地前置条件： 安装好 chromedriver 驱动， 安装 tesseract 并将 tesseract 加到环境变量下(识别二维码需要，如果是设置 cookies 方式则不需要)，如果是需要连接数据库的话，还要配置好表结构
+> 本地前置条件： 安装好 chromedriver 驱动， 安装 tesseract 并将 tesseract 加到环境变量下(识别二维码需要，如果是用 cookies 方式则不需要)，如果是需要连接数据库的话，还要配置好表结构
 
 1. 从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
 
@@ -92,6 +92,9 @@
     ├── acquire_fund_base.py     # 爬取基金基础数据-- 一些不变动的数据，例如成立时间
     ├── acquire_fund_quarter.py  # 爬取基金季度变动 -- 例如持仓数据
     ├── acquire_fund_snapshot.py # 基金列表快照数据 —— 列表数据
+    ├── fund_info_supplement.py  # 执行补充维度清算，总资产信息
+    ├── fund_statistic.py        # 基金重仓股分析
+    ├── fund_strategy.py         # 高性价比基金筛选
     ├── assets                   # 一些静态资源,例如星级图片
     │   └── star
     │       ├── star0.gif
@@ -108,10 +111,10 @@
     │   ├── api.py               # api 基金信息爬取，主要是补充crawler不到一些信息
     │   ├── crawler.py           # 基金页面爬取
     │   ├── statistic.py         # 基金统计
-    │   └── csv.py               # 基金存为csv
+    │   ├── csv.py               # 基金存为csv
+    │   └── supplement.py        # 补充或者更新基金清算，总资产维度信息
     ├── lib
     │   └── mysnowflake.py       # 雪花id生成
-    ├── update_fund_total_asset.py # 更新基金的总资产，主要是一些同类基金，在晨星网数据不一致
     └── utils.py                 # 一些工具函数，比如登录，设置cookies等
         ├── __init__.py
         ├── cookies.py

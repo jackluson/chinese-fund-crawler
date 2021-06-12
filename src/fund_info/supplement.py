@@ -34,7 +34,7 @@ class FundSupplement:
           continue
         print('fund_api', fund_api.buy_status, fund_api.sell_status)
 
-    def update_c_class_fund_total_asset(self):
+    def update_fund_total_asset(self):
       fund_query = FundQuery()
       each_fund_update = FundUpdate()
     # 获取所有的A类基金

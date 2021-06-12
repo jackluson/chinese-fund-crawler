@@ -18,4 +18,4 @@ if __name__ == '__main__':
   #fund_supplement.update_archive_status()
 
   #补充除了A类基金的其他类基金的总资产信息
-  fund_supplement.update_c_class_fund_total_asset()
+  fund_supplement.update_fund_total_asset()

@@ -8,7 +8,8 @@ code-record/*
 *fund_morning_star.csv
 abnormal
 demo/
-output/
+output/json/
+!output/xlsx/
 .env
 
 # C extensions

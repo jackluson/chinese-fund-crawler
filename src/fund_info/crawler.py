@@ -290,11 +290,21 @@ class FundSpider:
             'qt_stock').find_elements_by_xpath("li")
         for index in range(4, len(li_elements) - 1, 4):
             temp_stock_info = dict()  # 一只股票信息
-            stock_base = li_elements[index].text.split('.')
-            temp_stock_info['stock_code'] = stock_base[0]
-            temp_stock_info['stock_market'] = None if len(
+            stock_base = re.split('\.|\s',li_elements[index].text) # 
+            stock_code= stock_base[0]
+            stock_market = None if len(
                 stock_base) == 1 else stock_base.pop()
-            temp_stock_info['stock_name'] = li_elements[index + 1].text
+            #纠正港股市场及代码 -- 港股号位是5位
+            if bool(re.search("^(H|S)?\d{2,5}(HK)?$", stock_code)) and not stock_market:
+                stock_market = 'HK'
+            if stock_market == 'HK' and bool(re.search("^(H|S)?\d{2,5}(HK)?$", stock_code)):
+                stock_code = stock_code.replace('HK', '')
+                stock_code = stock_code.replace('H', '')
+                stock_code = stock_code.replace('S', '')
+                stock_code = '0' * (5 - len(stock_code)) + stock_code
+            temp_stock_info['stock_code'] = stock_code.replace(' ', '')
+            temp_stock_info['stock_market'] = stock_market.replace(' ', '')
+            temp_stock_info['stock_name'] = li_elements[index + 1].text.replace(' ', '')
             # temp_stock_info['stock_value'] = li_elements[index+2].text
             temp_stock_info['stock_portion'] = li_elements[index +
                                                            3].text if li_elements[index + 3].text != '-' else None

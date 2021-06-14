@@ -302,7 +302,7 @@ class FundSpider:
                 stock_code = stock_code.replace('H', '')
                 stock_code = stock_code.replace('S', '')
                 stock_code = '0' * (5 - len(stock_code)) + stock_code
-            temp_stock_info['stock_code'] = stock_code.replace(' ', '')
+            temp_stock_info['stock_code'] = stock_code
             temp_stock_info['stock_market'] = stock_market.replace(' ', '')
             temp_stock_info['stock_name'] = li_elements[index + 1].text.replace(' ', '')
             # temp_stock_info['stock_value'] = li_elements[index+2].text

@@ -39,8 +39,8 @@ def get_fund_code_pool():
         # 'manager_start_date': '2020-05-25'
     }
     fund_code_pool = each_statistic.select_fund_pool(
-    #    **condition_dict,
-    #)
+        **condition_dict,
+    )
     return fund_code_pool
 
 def stocks_compare(stock_list, fund_code_pool=None):
@@ -48,6 +48,8 @@ def stocks_compare(stock_list, fund_code_pool=None):
     filter_list = []
     for stock in stock_list:
         stock_code = stock[0].split('-', 1)[0]
+        if not stock_code:
+            continue
         stock_name = stock[0].split('-', 1)[1]
         stock_sum = stock[1]
 
@@ -78,7 +80,7 @@ def stocks_compare(stock_list, fund_code_pool=None):
         flag = 'up' if diff > 0 else 'down'
         if diff == 0:
             flag = '='
-        item_tuple = (stock_name, stock_sum, last_stock_sum,
+        item_tuple = (stock_code, stock_name, stock_sum, last_stock_sum,
                       diff, diff_percent, flag)
 
         # if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
@@ -89,9 +91,16 @@ def stocks_compare(stock_list, fund_code_pool=None):
 def top100_stock(each_statistic, threshold=80):
     quarter_index = get_last_quarter_str()
     last_quarter_index = get_last_quarter_str(2)
+    output_file = './outcome/strategy/top100_rank.xlsx'
+    sheet_name = quarter_index + '基金重仓股T100'
+    if threshold == 0:
+        output_file = './outcome/strategy/all_rank.xlsx'
+        sheet_name = quarter_index + '全股排名'
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
-        filter_count=threshold)[:100]
+        filter_count=threshold)
+    if threshold != 0:
+        stock_top_list = stock_top_list[:100]
     # print('2020-Q4 top 100 股票')
     pprint(stock_top_list)
     #print(len(stock_top_list))
@@ -100,13 +109,11 @@ def top100_stock(each_statistic, threshold=80):
 
     #pprint(filter_list)
     pprint(len(filter_list))
-    df_filter_list = pd.DataFrame(filter_list, columns=[
+    df_filter_list = pd.DataFrame(filter_list, columns=['代码',
         '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降'])
-    df_filter_list.to_excel(
-        './outcome/strategy/top100.xlsx', sheet_name=quarter_index + '基金重仓股T100')
+    df_filter_list.to_excel(output_file, sheet_name=sheet_name)
 
-def all_stock(each_statistic, threshold=0):
-    quarter_index = "2021-Q1"
+def all_stock(quarter_index, each_statistic, threshold=0):
     stock_list = each_statistic.all_stock_fund_count_and_details(
         quarter_index=quarter_index,
         filter_count=threshold)
@@ -116,13 +123,23 @@ def all_stock(each_statistic, threshold=0):
         stock_code = stock_name_code.split('-', 1)[0]
         path = 'other'
         if bool(re.search("^\d{5}$", stock_code)):
-            path = 'hk'
+            path = '港股'
         elif bool(re.search("^\d{6}$", stock_code)):
-            path = 'a'
+            if bool(re.search("^00(0|1|2|3)\d{3}$", stock_code)):
+                path = 'A股/深证主板'
+            elif bool(re.search("^300\d{3}$", stock_code)):
+                path = 'A股/创业板'
+            elif bool(re.search("^60(0|1|2|3|5)\d{3}$", stock_code)):
+                path = 'A股/上证主板'
+            elif bool(re.search("^68(8|9)\d{3}$", stock_code)):
+                path = 'A股/科创板'
+            else:
+                print('stock_name_code', stock_name_code)
+            #path = 'A股'
         hold_fund_count = stock[1]['count']
         hold_fund_list = stock[1]['fund_list']
         df_list = pd.DataFrame(hold_fund_list)
-        stock_name_code = stock_name_code.replace('/', '-')
+        stock_name_code = stock_name_code.replace('-*', '-').replace('/', '-')
         path = './outcome/stocks/' + path + '/' + stock_name_code + '.xlsx'
         path = path.replace('\/', '-')
         if os.path.exists(path):
@@ -139,8 +156,9 @@ def all_stock(each_statistic, threshold=0):
 
 if __name__ == '__main__':
     each_statistic = FundStatistic()
+    quarter_index = "2021-Q1"
     # 获取重仓股
-    top100_stock(each_statistic)
+    #top100_stock(each_statistic, 80)
 
     # 所有股票的基金持仓细节
-    #all_stock(each_statistic)
+    all_stock(quarter_index, each_statistic)

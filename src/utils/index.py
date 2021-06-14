@@ -62,8 +62,8 @@ def get_quarter_index(input_date):
     return index
 
 
-def get_last_quarter_str():
-    last_quarter_time = time.localtime(time.time() - 3 * 30 * 24 * 3600)
+def get_last_quarter_str(last_index=1):
+    last_quarter_time = time.localtime(time.time() - last_index * 3 * 30 * 24 * 3600)
     year = time.strftime("%Y", last_quarter_time)
     date = time.strftime("%m-%d", last_quarter_time)
     index = get_quarter_index(date)
@@ -75,3 +75,10 @@ def get_quarter_date(quarter_index_str):
     boundary_date_list = ['03-31', '06-30', '09-30', '12-31']
     quarter_index = quarter_index_str.split('-')[1][1:]
     return year + '-' + boundary_date_list[int(quarter_index) - 1]
+
+def fisrt_match_condition_from_list(list, code):
+  for item in list:
+    stock_code = item.split('-', 1)[0]
+    is_exist = code == stock_code
+    if is_exist:
+      return item

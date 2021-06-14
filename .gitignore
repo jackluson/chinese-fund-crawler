@@ -6,8 +6,10 @@ code-record/*
 *$py.class
 .vscode/
 *fund_morning_star.csv
+src/temp_update_*
 abnormal
 demo/
+outcome/stocks/
 output/json/
 !output/xlsx/
 .env

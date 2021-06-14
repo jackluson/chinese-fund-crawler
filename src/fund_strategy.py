@@ -9,12 +9,15 @@ Copyright (c) 2021 Camel Lu
 '''
 from sql_model.fund_query import FundQuery
 import pandas as pd
-from openpyxl import load_workbook
+from openpyxl import load_workbook,Workbook
+from openpyxl.utils import get_column_letter
+from utils.index import get_last_quarter_str
 from pprint import pprint
 
-if __name__ == '__main__':
-    each_query = FundQuery()
-    quarter_index = '2020-Q4'
+# 输出高分基金
+def output_high_score_funds(each_query,quarter_index=None):
+    if quarter_index == None:
+       quarter_index = get_last_quarter_str()
     high_score_funds = each_query.select_high_score_funds(
         quarter_index=quarter_index)
     columns_bk = ['代码', '名称', '季度', '总资产', '现任基金经理管理起始时间', '投资风格', '三月最大回撤', '六月最大回撤', '夏普比率', '阿尔法系数', '贝塔系数',
@@ -34,7 +37,24 @@ if __name__ == '__main__':
     writer = pd.ExcelWriter(path, engine='openpyxl')
     book = load_workbook(path)
     writer.book = book
-
     df_high_score_funds.to_excel(writer, sheet_name=quarter_index)
     writer.save()
     writer.close()
+
+if __name__ == '__main__':
+    #each_query = FundQuery()
+    #quarter_index = '2020-Q4'
+    #output_high_score_funds()
+    dest_filename = 'empty_book.xlsx'
+    #wb = Workbook(dest_filename)
+    wb = load_workbook(filename = 'empty_book.xlsx')
+    ws = wb.active
+    print("ws", ws)
+    #ws.merge_cells('A2:D2')
+    ws.merge_cells(start_row=2, start_column=1, end_row=4, end_column=4)
+    ws.merge_cells('J17:J20')
+    ws.column_dimensions.group('A','D', hidden=True)
+    ws.row_dimensions.group(1,10, hidden=True)
+    wb.save(dest_filename)
+    #ws.unmerge_cells('A2:D2')
+

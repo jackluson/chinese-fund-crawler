@@ -224,12 +224,13 @@ class FundQuery:
         c_class_result = self.cursor.fetchone()
         return c_class_result
 
+    #获取基金十大持仓以及代码，名称
     def select_top_10_stock(self, quarter_index=None, fund_code_pool=None):
         stock_sql_join = ''
         for index in range(10):
             stock_sql_join = stock_sql_join + \
-                "t.top_stock_%s_code, t.top_stock_%s_name" % (
-                    str(index), str(index)) + ","
+                "t.top_stock_%s_code, t.top_stock_%s_name, t.top_stock_%s_portion" % (
+                    str(index), str(index), str(index)) + ","
         stock_sql_join = stock_sql_join[0:-1]
         fund_code_list_sql = ''
         # 判断是否传入fund_code_pool
@@ -238,7 +239,7 @@ class FundQuery:
                 return ()
             list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "AND t.fund_code IN (" + list_str + ")"
-        sql_query_quarter = "SELECT t.fund_code," + stock_sql_join + \
+        sql_query_quarter = "SELECT t.fund_code, t.fund_name, t.stock_position_total, " + stock_sql_join + \
             " FROM fund_morning_stock_info as t WHERE t.quarter_index = %s AND t.stock_position_total > 20 " + \
             fund_code_list_sql + \
             ";"  # 大于20%股票持仓基金
@@ -249,13 +250,13 @@ class FundQuery:
         return results
 
     # 分组查询特定股票的每个季度基金持有总数
-    def select_special_stock_fund_count(self, stock_name, fund_code_pool=None):
+    def select_special_stock_fund_count(self, stock_code, fund_code_pool=None):
         stock_sql_join = '('
         for index in range(10):
-            escape_name = stock_name.replace("'", "\\'")
+            escape_code = stock_code.replace("'", "\\'")
             stock_sql_join = stock_sql_join + \
-                "t.top_stock_{0}_name = '{1}' or ".format(
-                    str(index), escape_name)
+                "t.top_stock_{0}_code = '{1}' or ".format(
+                    str(index), escape_code)
         stock_sql_join = stock_sql_join[0:-3] + ')'
         fund_code_list_sql = ''
         # 判断是否传入fund_code_pool

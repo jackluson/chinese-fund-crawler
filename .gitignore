@@ -9,7 +9,7 @@ code-record/*
 src/temp_update_*
 abnormal
 demo/
-outcome/stocks/
+#outcome/stocks/
 output/json/
 !output/xlsx/
 .env

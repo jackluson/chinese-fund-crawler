@@ -114,6 +114,7 @@
     │   ├── csv.py               # 基金存为csv
     │   └── supplement.py        # 补充或者更新基金清算，总资产维度信息
     ├── lib
+    ├── outcome                      # 数据成果整理子项目
     │   └── mysnowflake.py       # 雪花id生成
     └── utils.py                 # 一些工具函数，比如登录，设置cookies等
         ├── __init__.py

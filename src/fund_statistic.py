@@ -45,6 +45,8 @@ def get_fund_code_pool():
 
 def stocks_compare(stock_list, fund_code_pool=None):
     each_statistic = FundStatistic()
+    last_quarter_index = get_last_quarter_str(2)
+
     filter_list = []
     for stock in stock_list:
         stock_code = stock[0].split('-', 1)[0]
@@ -57,17 +59,13 @@ def stocks_compare(stock_list, fund_code_pool=None):
             stock_code,
             fund_code_pool
         )
-        try:
-            last_count_tuple = stock_quarter_count_tuple[len(
-                stock_quarter_count_tuple) - 2]
-        except:
-            print("stock_quarter_count_tuple", stock_quarter_count_tuple)
-            print('该股票查询异常', stock_code, stock_name)
-            continue
-
-        last_stock_sum = last_count_tuple[0]  # 选出上一个季度的
-        if len(stock_quarter_count_tuple) == 1:
-            last_stock_sum = 0
+        last_stock_sum = 0
+        print("stock_quarter_count_tuple", stock_quarter_count_tuple)
+        for item in stock_quarter_count_tuple:
+            quarter_index_str = item[1]
+            if quarter_index_str == last_quarter_index:
+                last_stock_sum = item[0]
+                break
 
         diff = stock_sum - last_stock_sum
 
@@ -88,30 +86,73 @@ def stocks_compare(stock_list, fund_code_pool=None):
         # print(item_tuple)
     return filter_list
 
-def top100_stock(each_statistic, threshold=80):
+# 股票排名
+def rank_stock(each_statistic, threshold=80):
     quarter_index = get_last_quarter_str()
     last_quarter_index = get_last_quarter_str(2)
-    output_file = './outcome/strategy/top100_rank.xlsx'
+    output_file = './outcome/数据整理/strategy/top100_rank.xlsx'
     sheet_name = quarter_index + '基金重仓股T100'
+    columns=['代码',
+        '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降']
     if threshold == 0:
-        output_file = './outcome/strategy/all_rank.xlsx'
-        sheet_name = quarter_index + '全股排名'
+        output_file = './outcome/数据整理/strategy/'+ quarter_index +'-all_stock_rank.xlsx'
+
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
         filter_count=threshold)
     if threshold != 0:
         stock_top_list = stock_top_list[:100]
-    # print('2020-Q4 top 100 股票')
-    pprint(stock_top_list)
-    #print(len(stock_top_list))
+    #pprint(stock_top_list)
+    if threshold != 0:
+        filter_list = stocks_compare(stock_top_list)
+        df_filter_list = pd.DataFrame(filter_list, columns=columns)
+        df_filter_list.to_excel(output_file, sheet_name=sheet_name)
+    else:
+        other_stock_list = []
+        hk_stock_list = []
+        a_stock_list = []
+        for stock_name_code in stock_top_list:
+            #print(stock_name_code[0])
+            stock_code = stock_name_code[0].split('-', 1)[0]
+            #path = 'other'
+            if bool(re.search("^\d{5}$", stock_code)):
+                #path = '港股'
+                hk_stock_list.append(stock_name_code)
+            elif bool(re.search("^\d{6}$", stock_code)):
+                if bool(re.search("^00(0|1|2|3)\d{3}$", stock_code)):
+                    #path = 'A股/深证主板'
+                    a_stock_list.append(stock_name_code)
+                elif bool(re.search("^300\d{3}$", stock_code)):
+                    #path = 'A股/创业板'
+                    a_stock_list.append(stock_name_code)
+                elif bool(re.search("^60(0|1|2|3|5)\d{3}$", stock_code)):
+                    #path = 'A股/上证主板'
+                    a_stock_list.append(stock_name_code)
+                elif bool(re.search("^68(8|9)\d{3}$", stock_code)):
+                    #path = 'A股/科创板'
+                    a_stock_list.append(stock_name_code)
+                else:
+                    other_stock_list.append(stock_name_code)
+            else:
+                other_stock_list.append(stock_name_code)
 
-    filter_list = stocks_compare(stock_top_list)
+        a_stock_compare_list = stocks_compare(a_stock_list)
+        hk_stock_compare_list = stocks_compare(hk_stock_list)
+        other_stock_compare_list = stocks_compare(other_stock_list)
 
-    #pprint(filter_list)
-    pprint(len(filter_list))
-    df_filter_list = pd.DataFrame(filter_list, columns=['代码',
-        '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降'])
-    df_filter_list.to_excel(output_file, sheet_name=sheet_name)
+        df_a_list = pd.DataFrame(a_stock_compare_list, columns=columns)
+        df_hk_list = pd.DataFrame(hk_stock_compare_list, columns=columns)
+        df_other_list = pd.DataFrame(other_stock_compare_list, columns=columns)
+
+        writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
+        df_a_list.to_excel(writer, sheet_name='A股')
+
+        df_hk_list.to_excel(writer, sheet_name='港股')
+
+        df_other_list.to_excel(writer, sheet_name='其他')
+
+        writer.save()
+        
 
 def all_stock(quarter_index, each_statistic, threshold=0):
     stock_list = each_statistic.all_stock_fund_count_and_details(
@@ -140,7 +181,7 @@ def all_stock(quarter_index, each_statistic, threshold=0):
         hold_fund_list = stock[1]['fund_list']
         df_list = pd.DataFrame(hold_fund_list)
         stock_name_code = stock_name_code.replace('-*', '-').replace('/', '-')
-        path = './outcome/stocks/' + path + '/' + stock_name_code + '.xlsx'
+        path = './outcome/数据整理/stocks/' + path + '/' + stock_name_code + '.xlsx'
         path = path.replace('\/', '-')
         if os.path.exists(path):
             writer = pd.ExcelWriter(path, engine='openpyxl')
@@ -158,7 +199,7 @@ if __name__ == '__main__':
     each_statistic = FundStatistic()
     quarter_index = "2021-Q1"
     # 获取重仓股
-    #top100_stock(each_statistic, 80)
+    rank_stock(each_statistic, 0)
 
     # 所有股票的基金持仓细节
-    all_stock(quarter_index, each_statistic)
+    #all_stock(quarter_index, each_statistic)

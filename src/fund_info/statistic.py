@@ -50,7 +50,7 @@ class FundStatistic:
         code_dict = dict()
         for result in results:
             # print(result)
-            for index in range(3, len(result), 3):
+            for index in range(4, len(result), 3):
                 code = result[index]
                 name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
                 if code == None or name == None:
@@ -95,9 +95,11 @@ class FundStatistic:
             fund_info = {
                 '基金代码': result[0],
                 '基金名称': result[1],
-                '股票总仓位': result[2],
+                '基金金额': result[2],
+                '股票总仓位': result[3],
             }
-            for index in range(3, len(result), 3):
+            totol_asset =  result[2]
+            for index in range(4, len(result), 3):
                 code = result[index]
                 name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
                 portion = result[index + 2]  # 仅以股票名称为key，兼容港股，A股
@@ -107,11 +109,13 @@ class FundStatistic:
                 if key == None and code and name:
                     key = str(code) + '-' + str(name)
                 #key = str(name)
+                hold_asset = round(portion * totol_asset / 100, 4) if totol_asset and portion else 0
                 if(key in code_dict and code != None):
                     code_dict[key]['count'] = code_dict[key]['count'] + 1
                     code_dict[key]['fund_list'].append({
                         **fund_info,
                         '仓位占比': portion,
+                        '持有市值(亿元)': hold_asset,
                         '仓位排名': int(index / 3)
                     })
                 else:
@@ -120,6 +124,7 @@ class FundStatistic:
                         'fund_list': [{
                         **fund_info,
                         '仓位占比': portion,
+                        '持有市值(亿元)': hold_asset,
                         '仓位排名': int(index / 3)
                     }]
                     }

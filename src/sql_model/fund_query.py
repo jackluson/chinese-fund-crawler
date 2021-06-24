@@ -239,13 +239,13 @@ class FundQuery:
                 return ()
             list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "AND t.fund_code IN (" + list_str + ")"
-        sql_query_quarter = "SELECT t.fund_code, t.fund_name, t.stock_position_total, " + stock_sql_join + \
-            " FROM fund_morning_stock_info as t WHERE t.quarter_index = %s AND t.stock_position_total > 20 " + \
+        sql_query_quarter = "SELECT t.fund_code, t.fund_name, u.total_asset, t.stock_position_total, " + stock_sql_join + \
+            " FROM fund_morning_stock_info as t LEFT JOIN fund_morning_quarter as u ON u.fund_code = t.fund_code WHERE u.quarter_index = %s AND t.quarter_index = %s AND t.stock_position_total > 20 " + \
             fund_code_list_sql + \
             ";"  # 大于20%股票持仓基金
         if quarter_index == None:
             quarter_index = self.quarter_index
-        self.cursor.execute(sql_query_quarter, [quarter_index])    # 执行sql语句
+        self.cursor.execute(sql_query_quarter, [quarter_index, quarter_index])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
 

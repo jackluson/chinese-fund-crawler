@@ -152,17 +152,17 @@ def rank_stock(each_statistic, threshold=80):
         df_other_list.to_excel(writer, sheet_name='其他')
 
         writer.save()
-        
+
 
 def all_stock(quarter_index, each_statistic, threshold=0):
     stock_list = each_statistic.all_stock_fund_count_and_details(
         quarter_index=quarter_index,
         filter_count=threshold)
-    for i in range(0, len(stock_list)):
+    for i in range(0, 500):
         stock = stock_list[i]
         stock_name_code = stock[0]
         stock_code = stock_name_code.split('-', 1)[0]
-        path = 'other'
+        path = '其他'
         if bool(re.search("^\d{5}$", stock_code)):
             path = '港股'
         elif bool(re.search("^\d{6}$", stock_code)):
@@ -183,12 +183,22 @@ def all_stock(quarter_index, each_statistic, threshold=0):
         stock_name_code = stock_name_code.replace('-*', '-').replace('/', '-')
         path = './outcome/数据整理/stocks/' + path + '/' + stock_name_code + '.xlsx'
         path = path.replace('\/', '-')
+        print("path", path)
+        #print('df_list--',stock_name_code, df_list)
         if os.path.exists(path):
             writer = pd.ExcelWriter(path, engine='openpyxl')
             book = load_workbook(path)
-            writer.book = book
-            df_list.to_excel(
-                writer, sheet_name=quarter_index)
+            # 表名重复，删掉，重写
+            if quarter_index in book.sheetnames:
+                del book[quarter_index]
+            if len(book.sheetnames) == 0:
+                df_list.to_excel(
+                path, sheet_name=quarter_index)
+                continue
+            else:
+                writer.book = book
+                df_list.to_excel(
+                    writer, sheet_name=quarter_index)
             writer.save()
             writer.close()
         else:
@@ -199,7 +209,7 @@ if __name__ == '__main__':
     each_statistic = FundStatistic()
     quarter_index = "2021-Q1"
     # 获取重仓股
-    rank_stock(each_statistic, 0)
+    #rank_stock(each_statistic, 0)
 
     # 所有股票的基金持仓细节
-    #all_stock(quarter_index, each_statistic)
+    all_stock(quarter_index, each_statistic)

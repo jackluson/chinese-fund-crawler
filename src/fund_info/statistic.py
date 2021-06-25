@@ -50,6 +50,7 @@ class FundStatistic:
         code_dict = dict()
         for result in results:
             # print(result)
+            totol_asset =  result[2]
             for index in range(4, len(result), 3):
                 code = result[index]
                 name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
@@ -61,16 +62,21 @@ class FundStatistic:
                 if key == None and code and name:
                     key = str(code) + '-' + str(name)
                 if(key in code_dict and code != None):
-                    code_dict[key] = code_dict[key] + 1
+                    count = code_dict[key]['count'] + 1
+                    code_dict[key] = {
+                        'count': count
+                    }
                 else:
-                    code_dict[key] = 1
+                    code_dict[key] = {
+                        'count': 1
+                    }
         filer_dict = dict()
-
+ 
         for key, value in code_dict.items():  # for (key,value) in girl_dict.items() 这样加上括号也可以
-            if value > filter_count and key != None:
+            if value['count'] > filter_count and key != None:
                 filer_dict[key] = value
                 # print(key + ":" + str(value))
-        return sorted(filer_dict.items(), key=lambda x: x[1], reverse=True)
+        return sorted(filer_dict.items(), key=lambda x: x[1]['count'], reverse=True)
 
     def all_stock_fund_count_and_details(self, *, quarter_index=None, fund_code_pool=None, filter_count=100):
         """查询某一个季度基金的十大持仓，并对持仓股票进行汇总统计，并根据filter_count进行过滤
@@ -101,8 +107,8 @@ class FundStatistic:
             totol_asset =  result[2]
             for index in range(4, len(result), 3):
                 code = result[index]
-                name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
-                portion = result[index + 2]  # 仅以股票名称为key，兼容港股，A股
+                name = result[index + 1]
+                portion = result[index + 2]
                 if code == None or name == None:
                     continue
                 key = fisrt_match_condition_from_list(list(code_dict), code)

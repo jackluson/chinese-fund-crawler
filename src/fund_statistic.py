@@ -1,4 +1,5 @@
 # -*- coding:UTF-8 -*-
+
 '''
 Desc: 从基金的持仓中统计股票出现频率
 File: /index.py
@@ -53,16 +54,18 @@ def stocks_compare(stock_list, fund_code_pool=None):
         if not stock_code:
             continue
         stock_name = stock[0].split('-', 1)[1]
-        stock_sum = stock[1]
+        stock_holder_detail = stock[1]
+        stock_sum = stock_holder_detail.get('count')
 
         stock_quarter_count_tuple = each_statistic.item_stock_fund_count(
             stock_code,
             fund_code_pool
         )
         last_stock_sum = 0
-        print("stock_quarter_count_tuple", stock_quarter_count_tuple)
+        #print("stock_quarter_count_tuple", stock_quarter_count_tuple)
         for item in stock_quarter_count_tuple:
             quarter_index_str = item[1]
+            
             if quarter_index_str == last_quarter_index:
                 last_stock_sum = item[0]
                 break
@@ -86,79 +89,91 @@ def stocks_compare(stock_list, fund_code_pool=None):
         # print(item_tuple)
     return filter_list
 
-# 股票排名
-def rank_stock(each_statistic, threshold=80):
-    quarter_index = get_last_quarter_str()
+# T100权重股排名
+def t100_stocks_rank(quarter_index, each_statistic):
+    if quarter_index == None:
+        quarter_index = get_last_quarter_str()
     last_quarter_index = get_last_quarter_str(2)
     output_file = './outcome/数据整理/strategy/top100_rank.xlsx'
     sheet_name = quarter_index + '基金重仓股T100'
     columns=['代码',
         '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降']
-    if threshold == 0:
-        output_file = './outcome/数据整理/strategy/'+ quarter_index +'-all_stock_rank.xlsx'
 
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
-        filter_count=threshold)
-    if threshold != 0:
-        stock_top_list = stock_top_list[:100]
+        filter_count=80)
+    stock_top_list = stock_top_list[:100]  # 获取top100权重股
     #pprint(stock_top_list)
-    if threshold != 0:
-        filter_list = stocks_compare(stock_top_list)
-        df_filter_list = pd.DataFrame(filter_list, columns=columns)
-        df_filter_list.to_excel(output_file, sheet_name=sheet_name)
-    else:
-        other_stock_list = []
-        hk_stock_list = []
-        a_stock_list = []
-        for stock_name_code in stock_top_list:
-            #print(stock_name_code[0])
-            stock_code = stock_name_code[0].split('-', 1)[0]
-            #path = 'other'
-            if bool(re.search("^\d{5}$", stock_code)):
-                #path = '港股'
-                hk_stock_list.append(stock_name_code)
-            elif bool(re.search("^\d{6}$", stock_code)):
-                if bool(re.search("^00(0|1|2|3)\d{3}$", stock_code)):
-                    #path = 'A股/深证主板'
-                    a_stock_list.append(stock_name_code)
-                elif bool(re.search("^300\d{3}$", stock_code)):
-                    #path = 'A股/创业板'
-                    a_stock_list.append(stock_name_code)
-                elif bool(re.search("^60(0|1|2|3|5)\d{3}$", stock_code)):
-                    #path = 'A股/上证主板'
-                    a_stock_list.append(stock_name_code)
-                elif bool(re.search("^68(8|9)\d{3}$", stock_code)):
-                    #path = 'A股/科创板'
-                    a_stock_list.append(stock_name_code)
-                else:
-                    other_stock_list.append(stock_name_code)
+    filter_list = stocks_compare(stock_top_list)
+    df_filter_list = pd.DataFrame(filter_list, columns=columns)
+    df_filter_list.to_excel(output_file, sheet_name=sheet_name)
+
+# 所有股票排名
+def all_stocks_rank(each_statistic):
+    quarter_index = get_last_quarter_str()
+    print("quarter_index", quarter_index)
+    last_quarter_index = get_last_quarter_str(2)
+    sheet_name = last_quarter_index + '基金重仓股T100'
+    columns=['代码',
+        '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降']
+    output_file = './outcome/数据整理/strategy/'+ quarter_index +'-all_stock_rank.xlsx'
+
+
+    stock_top_list = each_statistic.all_stock_fund_count(
+        quarter_index=quarter_index,
+        filter_count=0)
+    other_stock_list = []
+    #print("stock_top_list", stock_top_list)
+    hk_stock_list = []
+    a_stock_list = []
+    for stock_name_code in stock_top_list:
+        print(stock_name_code)
+        stock_code = stock_name_code[0].split('-', 1)[0]
+        #path = 'other'
+        if bool(re.search("^\d{5}$", stock_code)):
+            #path = '港股'
+            hk_stock_list.append(stock_name_code)
+        elif bool(re.search("^\d{6}$", stock_code)):
+            if bool(re.search("^00(0|1|2|3)\d{3}$", stock_code)):
+                #path = 'A股/深证主板'
+                a_stock_list.append(stock_name_code)
+            elif bool(re.search("^300\d{3}$", stock_code)):
+                #path = 'A股/创业板'
+                a_stock_list.append(stock_name_code)
+            elif bool(re.search("^60(0|1|2|3|5)\d{3}$", stock_code)):
+                #path = 'A股/上证主板'
+                a_stock_list.append(stock_name_code)
+            elif bool(re.search("^68(8|9)\d{3}$", stock_code)):
+                #path = 'A股/科创板'
+                a_stock_list.append(stock_name_code)
             else:
                 other_stock_list.append(stock_name_code)
+        else:
+            other_stock_list.append(stock_name_code)
 
-        a_stock_compare_list = stocks_compare(a_stock_list)
-        hk_stock_compare_list = stocks_compare(hk_stock_list)
-        other_stock_compare_list = stocks_compare(other_stock_list)
+    a_stock_compare_list = stocks_compare(a_stock_list)
+    hk_stock_compare_list = stocks_compare(hk_stock_list)
+    other_stock_compare_list = stocks_compare(other_stock_list)
 
-        df_a_list = pd.DataFrame(a_stock_compare_list, columns=columns)
-        df_hk_list = pd.DataFrame(hk_stock_compare_list, columns=columns)
-        df_other_list = pd.DataFrame(other_stock_compare_list, columns=columns)
+    df_a_list = pd.DataFrame(a_stock_compare_list, columns=columns)
+    #print("df_a_list", df_a_list)
+    df_hk_list = pd.DataFrame(hk_stock_compare_list, columns=columns)
+    df_other_list = pd.DataFrame(other_stock_compare_list, columns=columns)
 
-        writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
-        df_a_list.to_excel(writer, sheet_name='A股')
+    writer = pd.ExcelWriter(output_file, engine='xlsxwriter')
+    df_a_list.to_excel(writer, sheet_name='A股')
 
-        df_hk_list.to_excel(writer, sheet_name='港股')
+    df_hk_list.to_excel(writer, sheet_name='港股')
 
-        df_other_list.to_excel(writer, sheet_name='其他')
+    df_other_list.to_excel(writer, sheet_name='其他')
 
-        writer.save()
+    writer.save()
 
-
-def all_stock(quarter_index, each_statistic, threshold=0):
+def all_stock_holder_detail(quarter_index, each_statistic, threshold=0):
     stock_list = each_statistic.all_stock_fund_count_and_details(
         quarter_index=quarter_index,
         filter_count=threshold)
-    for i in range(0, 500):
+    for i in range(0, len(stock_list)):
         stock = stock_list[i]
         stock_name_code = stock[0]
         stock_code = stock_name_code.split('-', 1)[0]
@@ -176,10 +191,11 @@ def all_stock(quarter_index, each_statistic, threshold=0):
                 path = 'A股/科创板'
             else:
                 print('stock_name_code', stock_name_code)
-            #path = 'A股'
         hold_fund_count = stock[1]['count']
-        hold_fund_list = stock[1]['fund_list']
+        hold_fund_list = sorted(stock[1]['fund_list'], key=lambda x: x['持有市值(亿元)'], reverse=True) 
         df_list = pd.DataFrame(hold_fund_list)
+        #if stock_code == 'NTES':
+        #    print('stock_code', df_list)
         stock_name_code = stock_name_code.replace('-*', '-').replace('/', '-')
         path = './outcome/数据整理/stocks/' + path + '/' + stock_name_code + '.xlsx'
         path = path.replace('\/', '-')
@@ -209,7 +225,7 @@ if __name__ == '__main__':
     each_statistic = FundStatistic()
     quarter_index = "2021-Q1"
     # 获取重仓股
-    #rank_stock(each_statistic, 0)
+    all_stocks_rank(each_statistic)
 
     # 所有股票的基金持仓细节
-    all_stock(quarter_index, each_statistic)
+    #all_stock_holder_detail(quarter_index, each_statistic)

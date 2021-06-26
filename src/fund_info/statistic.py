@@ -54,21 +54,26 @@ class FundStatistic:
             for index in range(4, len(result), 3):
                 code = result[index]
                 name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
+                portion = result[index + 2]
                 if code == None or name == None:
                     #print('index', index, 'code', code, 'name', name)
                     #print('基金名称', result[1],'基金代码', result[0])
                     continue
                 key = fisrt_match_condition_from_list(list(code_dict), code)
+                holder_asset = round(portion * totol_asset / 100, 4) if totol_asset and portion else 0
                 if key == None and code and name:
                     key = str(code) + '-' + str(name)
                 if(key in code_dict and code != None):
                     count = code_dict[key]['count'] + 1
+                    holder_asset = code_dict[key]['holder_asset'] + holder_asset
                     code_dict[key] = {
-                        'count': count
+                        'count': count,
+                        'holder_asset': holder_asset
                     }
                 else:
                     code_dict[key] = {
-                        'count': 1
+                        'count': 1,
+                        'holder_asset': holder_asset
                     }
         filer_dict = dict()
  
@@ -115,13 +120,13 @@ class FundStatistic:
                 if key == None and code and name:
                     key = str(code) + '-' + str(name)
                 #key = str(name)
-                hold_asset = round(portion * totol_asset / 100, 4) if totol_asset and portion else 0
+                holder_asset = round(portion * totol_asset / 100, 4) if totol_asset and portion else 0
                 if(key in code_dict and code != None):
                     code_dict[key]['count'] = code_dict[key]['count'] + 1
                     code_dict[key]['fund_list'].append({
                         **fund_info,
                         '仓位占比': portion,
-                        '持有市值(亿元)': hold_asset,
+                        '持有市值(亿元)': holder_asset,
                         '仓位排名': int(index / 3)
                     })
                 else:
@@ -130,7 +135,7 @@ class FundStatistic:
                         'fund_list': [{
                         **fund_info,
                         '仓位占比': portion,
-                        '持有市值(亿元)': hold_asset,
+                        '持有市值(亿元)': holder_asset,
                         '仓位排名': int(index / 3)
                     }]
                     }
@@ -140,6 +145,25 @@ class FundStatistic:
     # 分组查询特定股票的每个季度基金持有总数
     def item_stock_fund_count(self, stock_code, fund_code_pool=None):
         return self.each_query.select_special_stock_fund_count(stock_code, fund_code_pool)
+
+    def select_special_stock_special_quarter_info(self, stock_code, quarter_index=None,fund_code_pool=None):
+        result =  self.each_query.select_special_stock_special_quarter_info(stock_code, quarter_index, fund_code_pool)
+        target_stock_dict = {
+            'count': len(result)
+        }
+        total_holder_asset = 0
+        for holders in result:
+            total_asset = holders[1]
+            for index in range(2, len(holders), 2):
+                code = holders[index]
+                if code == stock_code:
+                    portion = holders[index+1]
+                    holder_asset = round(portion * total_asset / 100, 4) if total_asset and portion else 0
+                    total_holder_asset = total_holder_asset + holder_asset
+                    break
+        target_stock_dict['holder_asset'] = total_holder_asset
+        return target_stock_dict
+
 
     def select_fund_pool(self, *, morning_star_rating_5="", morning_star_rating_3="", **args):
         return self.each_query.select_certain_condition_funds(

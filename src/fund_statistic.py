@@ -55,34 +55,38 @@ def stocks_compare(stock_list, fund_code_pool=None):
             continue
         stock_name = stock[0].split('-', 1)[1]
         stock_holder_detail = stock[1]
-        stock_sum = stock_holder_detail.get('count')
+        holder_count = stock_holder_detail.get('count')
+        holder_asset = stock_holder_detail.get('holder_asset')
 
-        stock_quarter_count_tuple = each_statistic.item_stock_fund_count(
+        last_quarter_holder_detail_dict = each_statistic.select_special_stock_special_quarter_info(
             stock_code,
+            last_quarter_index,
             fund_code_pool
         )
-        last_stock_sum = 0
-        #print("stock_quarter_count_tuple", stock_quarter_count_tuple)
-        for item in stock_quarter_count_tuple:
-            quarter_index_str = item[1]
-            
-            if quarter_index_str == last_quarter_index:
-                last_stock_sum = item[0]
-                break
+        
+        last_holder_count = last_quarter_holder_detail_dict['count']
+        last_holder_asset = last_quarter_holder_detail_dict['holder_asset']
 
-        diff = stock_sum - last_stock_sum
+        diff_holder_count = holder_count - last_holder_count
+        diff_holder_asset = holder_asset - last_holder_asset
 
-        diff_percent = '{:.2%}'.format(
-            diff / last_stock_sum) if last_stock_sum != 0 else "+∞"
-
-        # flag = '📈' if diff > 0 else '📉'
-        # if diff == 0:
+        diff_holder_count_percent = '{:.2%}'.format(
+            diff_holder_count / last_holder_count) if last_holder_count != 0 else "+∞"
+        
+        diff_holder_asset_percent = '{:.2%}'.format(
+            diff_holder_asset / last_holder_asset) if last_holder_asset != 0 else "+∞"
+        # flag = '📈' if diff_holder_count > 0 else '📉'
+        # if diff_holder_count == 0:
         #     flag = '⏸'
-        flag = 'up' if diff > 0 else 'down'
-        if diff == 0:
+        flag_count = 'up' if diff_holder_count > 0 else 'down'
+        if diff_holder_count == 0:
             flag = '='
-        item_tuple = (stock_code, stock_name, stock_sum, last_stock_sum,
-                      diff, diff_percent, flag)
+        flag_asset = 'up' if diff_holder_asset > 0 else 'down'
+        if diff_holder_asset == 0:
+            flag = '='
+            
+        item_tuple = (stock_code, stock_name, holder_count, last_holder_count,
+                      diff_holder_count, diff_holder_count_percent, flag_count, holder_asset, last_holder_asset, diff_holder_asset, diff_holder_asset_percent, flag_asset)
 
         # if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
         filter_list.append(item_tuple)
@@ -90,14 +94,14 @@ def stocks_compare(stock_list, fund_code_pool=None):
     return filter_list
 
 # T100权重股排名
-def t100_stocks_rank(quarter_index, each_statistic):
+def t100_stocks_rank(quarter_index=None, *, each_statistic):
     if quarter_index == None:
         quarter_index = get_last_quarter_str()
     last_quarter_index = get_last_quarter_str(2)
     output_file = './outcome/数据整理/strategy/top100_rank.xlsx'
     sheet_name = quarter_index + '基金重仓股T100'
     columns=['代码',
-        '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降']
+        '名称', quarter_index + '持有数量（只）', last_quarter_index +'持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
 
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
@@ -115,19 +119,18 @@ def all_stocks_rank(each_statistic):
     last_quarter_index = get_last_quarter_str(2)
     sheet_name = last_quarter_index + '基金重仓股T100'
     columns=['代码',
-        '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '环比', '环比百分比', '升Or降']
+        '名称', quarter_index + '持有数量（只）', last_quarter_index +'持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
     output_file = './outcome/数据整理/strategy/'+ quarter_index +'-all_stock_rank.xlsx'
 
 
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
         filter_count=0)
-    other_stock_list = []
     #print("stock_top_list", stock_top_list)
-    hk_stock_list = []
     a_stock_list = []
+    hk_stock_list = []
+    other_stock_list = []
     for stock_name_code in stock_top_list:
-        print(stock_name_code)
         stock_code = stock_name_code[0].split('-', 1)[0]
         #path = 'other'
         if bool(re.search("^\d{5}$", stock_code)):
@@ -224,8 +227,12 @@ def all_stock_holder_detail(quarter_index, each_statistic, threshold=0):
 if __name__ == '__main__':
     each_statistic = FundStatistic()
     quarter_index = "2021-Q1"
-    # 获取重仓股
-    all_stocks_rank(each_statistic)
 
     # 所有股票的基金持仓细节
     #all_stock_holder_detail(quarter_index, each_statistic)
+
+    # 获取所有股票排名,分类输出
+    all_stocks_rank(each_statistic)
+
+    # 获取Top100股票排名
+    #t100_stocks_rank(each_statistic=each_statistic)

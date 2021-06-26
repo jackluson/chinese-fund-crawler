@@ -240,12 +240,12 @@ class FundQuery:
             list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "AND t.fund_code IN (" + list_str + ")"
         sql_query_quarter = "SELECT t.fund_code, t.fund_name, u.total_asset, t.stock_position_total, " + stock_sql_join + \
-            " FROM fund_morning_stock_info as t LEFT JOIN fund_morning_quarter as u ON u.fund_code = t.fund_code WHERE u.quarter_index = %s AND t.quarter_index = %s AND t.stock_position_total > 20 " + \
+            " FROM fund_morning_stock_info as t LEFT JOIN fund_morning_quarter as u ON u.fund_code = t.fund_code AND u.quarter_index = t.quarter_index  WHERE u.quarter_index = %s AND t.stock_position_total > 20 " + \
             fund_code_list_sql + \
             ";"  # 大于20%股票持仓基金
         if quarter_index == None:
             quarter_index = self.quarter_index
-        self.cursor.execute(sql_query_quarter, [quarter_index, quarter_index])    # 执行sql语句
+        self.cursor.execute(sql_query_quarter, [quarter_index])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
 
@@ -273,7 +273,40 @@ class FundQuery:
         # print(self.cursor._last_executed)
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
+    #
+    def select_special_stock_special_quarter_info(self,stock_code,quarter_index=None,  fund_code_pool=None):
+        if quarter_index == None:
+            quarter_index = self.quarter_index
 
+        select_stock_sql_join = ''
+        condition_stock_sql_join = '('
+        for index in range(10):
+            escape_code = stock_code.replace("'", "\\'")
+            condition_stock_sql_join = condition_stock_sql_join + \
+                "t.top_stock_{0}_code = '{1}' or ".format(
+                    str(index), escape_code)
+            select_stock_sql_join = select_stock_sql_join + \
+                "t.top_stock_%s_code, t.top_stock_%s_portion" % (
+                    str(index), str(index)) + ","
+        condition_stock_sql_join = " AND " + condition_stock_sql_join[0:-3] + ')'
+        select_stock_sql_join = select_stock_sql_join[0:-1]
+        
+        fund_code_list_sql = ''
+        # 判断是否传入fund_code_pool
+        if isinstance(fund_code_pool, list):
+            if len(fund_code_pool) == 0:
+                return ()
+            list_str = ', '.join(fund_code_pool)
+            fund_code_list_sql = "t.fund_code IN (" + list_str + ") AND "
+        sql_query_sqecial_stock_fund_count = "SELECT a.fund_code, a.total_asset, "+ select_stock_sql_join +" FROM fund_morning_stock_info as t " + \
+        "LEFT JOIN fund_morning_quarter as a ON t.fund_code = a.fund_code AND t.quarter_index = a.quarter_index " + \
+            "WHERE t.quarter_index = %s AND t.stock_position_total > 20" + \
+            fund_code_list_sql + condition_stock_sql_join + ";"  # 大于20%股票持仓基金
+
+        self.cursor.execute(sql_query_sqecial_stock_fund_count, [quarter_index])    # 执行sql语句
+        # print(self.cursor._last_executed)
+        results = self.cursor.fetchall()    # 获取查询的所有记录
+        return results
     # total_asset 为null的基金
     def select_total_asset_is_null(self, quarter_index=None):
         if quarter_index == None:

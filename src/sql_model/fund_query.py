@@ -315,3 +315,23 @@ class FundQuery:
         self.cursor.execute(sql, [quarter_index])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
+
+    # 联表查某一个基金信息
+    def select_special_fund_info(self, code, quarter_index=None):
+        if quarter_index == None:
+            quarter_index = self.quarter_index
+        stock_sql_join = ''
+        for index in range(10):
+            stock_sql_join = stock_sql_join + \
+                "d.top_stock_%s_code, d.top_stock_%s_name, d.top_stock_%s_portion" % (
+                    str(index), str(index), str(index)) + ","
+        stock_sql_join = stock_sql_join[0:-1]
+        
+        sql = "SELECT a.fund_code, a.fund_name, a.fund_cat, c.name, b.total_asset, b.stock_position_total, b.stock_position_ten, " + stock_sql_join + \
+        " FROM fund_morning_base AS a LEFT JOIN fund_morning_quarter AS b ON a.fund_code = b.fund_code \
+        LEFT JOIN fund_morning_manager as c ON c.manager_id = b.manager_id \
+        LEFT JOIN fund_morning_stock_info as d ON b.fund_code = d.fund_code AND b.quarter_index = d.quarter_index \
+        WHERE a.fund_code = %s AND b.quarter_index = %s ;"
+        self.cursor.execute(sql, [code, quarter_index])    # 执行sql语句
+        results = self.cursor.fetchone()    # 获取查询的所有记录
+        return results

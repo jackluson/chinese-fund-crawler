@@ -63,7 +63,7 @@ def get_quarter_index(input_date):
 
 
 def get_last_quarter_str(last_index=1):
-    last_quarter_time = time.localtime(time.time() - last_index * 3 * 30 * 24 * 3600)
+    last_quarter_time = time.localtime(time.time() - last_index * 3 * 30 * 24 * 3600 - 24 * 3600)
     year = time.strftime("%Y", last_quarter_time)
     date = time.strftime("%m-%d", last_quarter_time)
     index = get_quarter_index(date)
@@ -82,3 +82,22 @@ def fisrt_match_condition_from_list(list, code):
     is_exist = code == stock_code
     if is_exist:
       return item
+
+
+def dict_list_to_list_list(dict_list, key_sort_list):
+    tuple_list =[]
+    for item in dict_list:
+        temp_list = []
+        for key in key_sort_list:
+            temp_list.append(item.get(key))
+        tuple_list.append(temp_list)
+    return tuple_list
+
+
+def find_from_list_of_dict(dict_list, match_key, value):
+    res = None
+    for sub in dict_list:
+        if sub[match_key] == value:
+            res = sub
+            break
+    return res

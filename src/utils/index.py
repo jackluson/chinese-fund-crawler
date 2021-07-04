@@ -63,7 +63,7 @@ def get_quarter_index(input_date):
 
 
 def get_last_quarter_str(last_index=1):
-    last_quarter_time = time.localtime(time.time() - last_index * 3 * 30 * 24 * 3600 - 24 * 3600)
+    last_quarter_time = time.localtime(time.time() - last_index * 3 * 30 * 24 * 3600)
     year = time.strftime("%Y", last_quarter_time)
     date = time.strftime("%m-%d", last_quarter_time)
     index = get_quarter_index(date)

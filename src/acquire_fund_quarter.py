@@ -13,20 +13,14 @@ import math
 from threading import Thread, Lock, current_thread
 from time import sleep, time
 from pprint import pprint
-import pandas
-from db.connect import connect
 from fund_info.crawler import FundSpider
 from fund_info.api import FundApier
 from fund_info.csv import FundCSV
 from lib.mysnowflake import IdWorker
 from utils.login import login_morning_star
+from utils.index import bootstrap_thread
 from sql_model.fund_query import FundQuery
 from sql_model.fund_insert import FundInsert
-
-connect_instance = connect()
-cursor = connect_instance.cursor()
-
-lock = Lock()
 
 # 利用api获取同类基金的资产
 
@@ -37,29 +31,22 @@ def get_total_asset(fund_code, platform):
     # 如果在爱基金平台找不到，则到展恒基金找
     if total_asset == None and platform == 'ai_fund':
         print("fund_code", total_asset, fund_code)
-        each_fund = FundApier(fund_code, end_date='2021-05-10', platform='zh_fund')
+        each_fund = FundApier(
+            fund_code, end_date='2021-05-10', platform='zh_fund')
         total_asset = each_fund.get_total_asset()
     return total_asset
-if __name__ == '__main__':
 
+
+if __name__ == '__main__':
+    lock = Lock()
     each_fund_query = FundQuery()
     record_total = each_fund_query.get_crawler_quarter_fund_total()    # 获取记录条数
     print('record_total', record_total)
     IdWorker = IdWorker()
-    page_start = 0
-    # error_funds = []
-    # 设置表头
     result_dir = './output/'
     fund_csv = FundCSV(result_dir)
-    if page_start == 0:
-        fund_csv.write_season_catch_fund(True)
-        fund_csv.write_abnormal_url_fund(True)
-    # df = pandas.read_csv(
-    #     result_dir + 'fund_morning_quarter_error.csv', usecols=[0, 2, 4])
-    # fund_list = df.values.tolist()
-    # print(len(d[d['代码'].astype(str).str.contains('10535')]))
-    # print(df[df['代码'].astype(str).str.contains('10535')]
-    #       ['股票总仓位'].values)
+    fund_csv.write_season_catch_fund(True)
+    fund_csv.write_abnormal_url_fund(True)
 
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
@@ -150,6 +137,7 @@ if __name__ == '__main__':
                     'morning_star_rating_5': each_fund.morning_star_rating.get(5),
                     'morning_star_rating_10': each_fund.morning_star_rating.get(10),
                 }
+                print('fund_code', each_fund.fund_code)
                 fund_insert.fund_quarterly_info(quarterly_dict)
                 # 入库十大股票持仓
                 stock_position_total = each_fund.stock_position.get(
@@ -186,46 +174,18 @@ if __name__ == '__main__':
                         quarterly_dict['fund_code'] = item_code
                         quarterly_dict['total_asset'] = total_asset
                         quarterly_dict['id'] = snow_flake_id + i + 1
-                        #入库
+                        # 入库
                         fund_insert.fund_quarterly_info(quarterly_dict)
                         if float(stock_position_total) > 0:
                             stock_dict['fund_code'] = item_code
                             stock_dict['id'] = snow_flake_id + i + 1
-                            #入库
+                            # 入库
                             fund_insert.fund_stock_info(stock_dict)
                 # pprint(fundDict)
             page_start = page_start + page_limit
             print(current_thread().getName(), 'page_start', page_start)
             sleep(3)
         chrome_driver.close()
-    threaders = []
-    start_time = time()
-    # steps = [{
-    #     "start": 0,
-    #     "end": 1000
-    # }, {
-    #     "start": 1000,
-    #     "end": 2000
-    # }, {
-    #     "start": 2000,
-    #     "end": 3000
-    # }, {
-    #     "start": 3500,
-    #     "end": record_total
-    # }]
-    thread_count = 4
-    step_num = record_total / thread_count
-    for i in range(thread_count):
-        # start = steps[i]['start']
-        # end = steps[i]['end']
-        start = i * step_num
-        end = (i + 1) * step_num
-        t = Thread(target=crawlData, args=(int(start), int(end)))
-        t.setDaemon(True)
-        threaders.append(t)
-        t.start()
-    for threader in threaders:
-        threader.join()
-    end_time = time()
-    print(record_total, 'run time is %s' % (end_time - start_time))
+
+    bootstrap_thread(crawlData, record_total, 4)
     exit()

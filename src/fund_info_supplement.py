@@ -13,9 +13,9 @@ from fund_info.supplement import FundSupplement
 
 
 if __name__ == '__main__':
-  fund_supplement = FundSupplement()
-  #补充基金清算维度信息
-  #fund_supplement.update_archive_status()
+    fund_supplement = FundSupplement()
+    # 补充基金清算维度信息
+    fund_supplement.update_archive_status()
 
-  #补充除了A类基金的其他类基金的总资产信息
-  fund_supplement.update_fund_total_asset()
+    # 补充除了A类基金的其他类基金的总资产信息
+    # fund_supplement.update_fund_total_asset()

@@ -53,9 +53,9 @@ def text_to_be_present_in_element(locator, text, next_page_locator):
 
 def get_fund_list():
     morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
-    chrome_driver = login_morning_star(morning_fund_selector_url, True)
+    chrome_driver = login_morning_star(morning_fund_selector_url, False)
     # 定义起始页码
-    page_num = 445
+    page_num = 443
     page_count = 25
     page_num_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
@@ -63,7 +63,8 @@ def get_fund_list():
     result_dir = './output/'
     output_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
         '类型' + ',' + '三年评级' + ',' + '五年评级' + ',' + '今年回报率' + '\n'
-    output_file_name = "fund_morning_snapshot_2021_q1.csv"
+    env_snapshot_table_name = os.getenv('snapshot_table_name')
+    output_file_name = env_snapshot_table_name + ".csv"
     # 设置表头
     if page_num == 1:
         with open(result_dir + output_file_name, 'w+') as csv_file:

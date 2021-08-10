@@ -9,14 +9,13 @@ Copyright (c) 2021 Camel Lu
 '''
 from threading import Lock
 from db.connect import connect
+from utils.index import lock_process
+from .base_model import BaseModel
 
 
-class FundInsert:
+class FundInsert(BaseModel):
     def __init__(self):
-        connect_instance = connect()
-        self.connect_instance = connect_instance
-        self.cursor = connect_instance.cursor()
-        self.lock = Lock()
+        super().__init__()
 
     def generate_insert_sql(self, target_dict, table_name, ignore_list):
         keys = ','.join(target_dict.keys())
@@ -34,29 +33,34 @@ class FundInsert:
         )
         return sql_insert
 
+    @lock_process
+    def insert_fund_base_info(self, base_dict):
+        base_sql_insert = self.generate_insert_sql(
+            base_dict, 'fund_morning_base', ['id', 'fund_code'])
+        self.cursor.execute(base_sql_insert,
+                            tuple(base_dict.values()))
+        self.connect_instance.commit()
+
+    @lock_process
     def insert_fund_manger_info(self, manager_dict):
-        self.lock.acquire()
         manager_sql_insert = self.generate_insert_sql(
             manager_dict, 'fund_morning_manager', ['id', 'manager_id', 'name'])
         self.cursor.execute(manager_sql_insert,
                             tuple(manager_dict.values()))
         self.connect_instance.commit()
-        self.lock.release()
 
+    @lock_process
     def fund_quarterly_info(self, quarterly_dict):
-        self.lock.acquire()
         quarterly_sql_insert = self.generate_insert_sql(
             quarterly_dict, 'fund_morning_quarter', ['id', 'quarter_index', 'fund_code'])
         self.cursor.execute(quarterly_sql_insert,
                             tuple(quarterly_dict.values()))
         self.connect_instance.commit()
-        self.lock.release()
 
+    @lock_process
     def fund_stock_info(self, stock_dict):
-        self.lock.acquire()
         stock_sql_insert = self.generate_insert_sql(
             stock_dict, 'fund_morning_stock_info', ['id', 'quarter_index', 'fund_code'])
         self.cursor.execute(stock_sql_insert,
                             tuple(stock_dict.values()))
         self.connect_instance.commit()
-        self.lock.release()

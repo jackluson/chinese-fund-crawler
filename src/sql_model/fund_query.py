@@ -7,42 +7,71 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
+import os
 import time
-from threading import Lock
-from utils.index import get_last_quarter_str, get_quarter_date
-from db.connect import connect
+from .base_model import BaseModel
+from utils.index import lock_process
 
 
-def format_sql(table_name, field_name, field_dict, prefix="AND"):
-    sql_str = ''
-    if not field_name or not isinstance(field_dict, dict):
+class BaseQuery(BaseModel):
+    def __init__(self):
+        super().__init__()
+
+    def format_sql(self, table_name, field_name, field_dict, prefix="AND"):
+        """
+        拼接数据
+
+        Args:
+            table_name (str): 表名
+            field_name (str): 拼接字段
+            field_dict (str): 字段拼接信息
+            prefix (str, optional): 默认连接前缀. Defaults to "AND".
+
+        Returns:
+            str: 拼接后字符串
+        """
+        sql_str = ''
+        if not field_name or not isinstance(field_dict, dict):
+            return sql_str
+        # field_name = field_dict.get('name')
+        field_value = field_dict.get('value')
+        operator = field_dict.get('operator')
+        if not field_name or not field_value or not operator:
+            return sql_str
+        format_dict = {
+            "prefix": prefix,
+            'table_name': table_name,
+            'field_name': field_name,
+            "operator": operator,
+            "value": field_value
+        }
+        sql_str = '{prefix} {table_name}.{field_name} {operator} {value}'.format(
+            **format_dict)
         return sql_str
-    # field_name = field_dict.get('name')
-    field_value = field_dict.get('value')
-    operator = field_dict.get('operator')
-    if not field_name or not field_value or not operator:
-        return sql_str
-    format_dict = {
-        "prefix": prefix,
-        'table_name': table_name,
-        'field_name': field_name,
-        "operator": operator,
-        "value": field_value
-    }
-    sql_str = '{prefix} {table_name}.{field_name} {operator} {value}'.format(
-        **format_dict)
-    return sql_str
 
 
-class FundQuery:
+class FundQuery(BaseQuery):
 
     def __init__(self):
-        self.quarter_index = get_last_quarter_str()
-        self.quarter_date = get_quarter_date(self.quarter_index)
-        connect_instance = connect()
-        self.connect_instance = connect_instance
-        self.cursor = connect_instance.cursor()
-        self.lock = Lock()
+        super().__init__()
+        self.env_snapshot_table_name = os.getenv('snapshot_table_name')
+
+    def get_fund_count_from_snapshot_no_exist(self):
+        sql_count = "SELECT count(*) FROM " + self.env_snapshot_table_name + \
+            " WHERE fund_code NOT IN (SELECT fund_code FROM fund_morning_base);"
+        self.cursor.execute(sql_count)
+        count = self.cursor.fetchone()
+        return count[0]
+
+    @lock_process
+    def get_fund_from_snapshot_table_no_exist(self, page_start, page_limit):
+        # 从fund_morning_snapshot_2021_q1 查出 fund_morning_base 中不存在的基金
+        sql = "SELECT fund_code, morning_star_code, fund_name FROM " + self.env_snapshot_table_name + \
+            " WHERE fund_code NOT IN (SELECT fund_code FROM fund_morning_base) ORDER BY fund_code LIMIT %s, %s"
+        self.cursor.execute(
+            sql, [page_start, page_limit])    # 执行sql语句
+        results = self.cursor.fetchall()   # 获取查询的所有记录
+        return results
 
     # 筛选出要更新的基金季度性信息的基金(B,C类基金除外，因为B、C基金大部分信息与A类一致)的总数
     def get_crawler_quarter_fund_total(self):
@@ -63,6 +92,7 @@ class FundQuery:
         return count[0]
 
     # 筛选出要更新的基金季度性信息的基金
+    @lock_process
     def select_quarter_fund(self, page_start, page_limit):
         sql = "SELECT t.fund_code,\
             t.morning_star_code, t.fund_name, t.fund_cat \
@@ -77,13 +107,11 @@ class FundQuery:
             AND t.fund_name NOT LIKE '%%B' \
             AND t.fund_code	NOT IN( SELECT fund_code FROM fund_morning_quarter as b \
             WHERE b.quarter_index = %s) LIMIT %s, %s;"
-        self.lock.acquire()
         self.cursor.execute(
             sql, [self.quarter_date, self.quarter_index, page_start, page_limit])    # 执行sql语句
-        results = self.cursor.fetchall()    # 获取查询的所有记录
-        self.lock.release()
-        return results
+        return self.cursor.fetchall()    # 获取查询的所有记录
 
+    @lock_process
     def select_high_score_funds(self, *, quarter_index=None):
         """获取高分基金池
 
@@ -119,50 +147,48 @@ class FundQuery:
                     a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
                     AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s \
                     ORDER BY a.risk_assessment_sharpby DESC, a.risk_rating_5 DESC;"
-        self.lock.acquire()
         self.cursor.execute(sql, [quarter_index, last_year_date])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
-        self.lock.release()
         return results
 
+    @lock_process
     def select_certain_condition_funds(self, *, quarter_index=None, morning_star_rating_5=None, morning_star_rating_3=None, manager_start_date=None, stock_position_total=None, stock_position_ten=None, **rest_dicts):
-        print("rest_dicts", rest_dicts)
         if quarter_index == None:
             quarter_index = self.quarter_index
 
-        morning_star_rating_3_sql = format_sql(
+        morning_star_rating_3_sql = self.format_sql(
             'a', 'morning_star_rating_3', morning_star_rating_3)
 
-        morning_star_rating_5_sql = format_sql(
+        morning_star_rating_5_sql = self.format_sql(
             'a', 'morning_star_rating_5', morning_star_rating_5)
 
-        manager_start_date_sql = format_sql(
+        manager_start_date_sql = self.format_sql(
             'a', 'manager_start_date', manager_start_date)
 
-        stock_position_total_sql = format_sql(
+        stock_position_total_sql = self.format_sql(
             'a', 'stock_position_total', stock_position_total)
 
-        stock_position_ten_sql = format_sql(
+        stock_position_ten_sql = self.format_sql(
             'a', 'stock_position_ten', stock_position_ten)
 
         risk_assessment_sharpby = rest_dicts.get('risk_assessment_sharpby')
 
-        risk_assessment_sharpby_sql = format_sql(
+        risk_assessment_sharpby_sql = self.format_sql(
             'a', 'risk_assessment_sharpby', risk_assessment_sharpby)
 
         risk_rating_2 = rest_dicts.get('risk_rating_2')
 
-        risk_rating_2_sql = format_sql(
+        risk_rating_2_sql = self.format_sql(
             'a', 'risk_rating_2', risk_rating_2)
 
         risk_rating_3 = rest_dicts.get('risk_rating_3')
 
-        risk_rating_3_sql = format_sql(
+        risk_rating_3_sql = self.format_sql(
             'a', 'risk_rating_3', risk_rating_3)
 
         risk_rating_5 = rest_dicts.get('risk_rating_5')
 
-        risk_rating_5_sql = format_sql(
+        risk_rating_5_sql = self.format_sql(
             'a', 'risk_rating_5', risk_rating_5)
         # print("网站名：{name}, 地址 {url}".format(**site))
         # if morning_star_rating_5 not None:
@@ -185,10 +211,8 @@ class FundQuery:
             'risk_rating_5': risk_rating_5_sql
         }
         sql_format = sql.format(**format_dict)
-        self.lock.acquire()
         self.cursor.execute(sql_format)    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录
-        self.lock.release()
         fund_pool = []
         for item in results:
             fund_code = item[0]
@@ -196,6 +220,7 @@ class FundQuery:
         return fund_pool
 
     # 筛选同类基金，除了A类
+    @lock_process
     def select_similar_fund(self, similar_name):
         sql_similar = "SELECT t.fund_code,\
                 t.morning_star_code, t.fund_name \
@@ -203,10 +228,8 @@ class FundQuery:
                 LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
                 WHERE t.fund_name LIKE %s \
                 AND t.fund_name NOT LIKE '%%A';"
-        self.lock.acquire()
         self.cursor.execute(sql_similar, [similar_name + '%'])
         results = self.cursor.fetchall()    # 获取查询的所有记录
-        self.lock.release()
         return results
 
     # A类基金
@@ -224,7 +247,7 @@ class FundQuery:
         c_class_result = self.cursor.fetchone()
         return c_class_result
 
-    #获取基金十大持仓以及代码，名称
+    # 获取基金十大持仓以及代码，名称
     def select_top_10_stock(self, quarter_index=None, fund_code_pool=None):
         stock_sql_join = ''
         for index in range(10):
@@ -274,7 +297,8 @@ class FundQuery:
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
     #
-    def select_special_stock_special_quarter_info(self,stock_code,quarter_index=None,  fund_code_pool=None):
+
+    def select_special_stock_special_quarter_info(self, stock_code, quarter_index=None,  fund_code_pool=None):
         if quarter_index == None:
             quarter_index = self.quarter_index
 
@@ -288,9 +312,10 @@ class FundQuery:
             select_stock_sql_join = select_stock_sql_join + \
                 "t.top_stock_%s_code, t.top_stock_%s_portion" % (
                     str(index), str(index)) + ","
-        condition_stock_sql_join = " AND " + condition_stock_sql_join[0:-3] + ')'
+        condition_stock_sql_join = " AND " + \
+            condition_stock_sql_join[0:-3] + ')'
         select_stock_sql_join = select_stock_sql_join[0:-1]
-        
+
         fund_code_list_sql = ''
         # 判断是否传入fund_code_pool
         if isinstance(fund_code_pool, list):
@@ -298,16 +323,18 @@ class FundQuery:
                 return ()
             list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "t.fund_code IN (" + list_str + ") AND "
-        sql_query_sqecial_stock_fund_count = "SELECT a.fund_code, a.total_asset, "+ select_stock_sql_join +" FROM fund_morning_stock_info as t " + \
-        "LEFT JOIN fund_morning_quarter as a ON t.fund_code = a.fund_code AND t.quarter_index = a.quarter_index " + \
+        sql_query_sqecial_stock_fund_count = "SELECT a.fund_code, a.total_asset, " + select_stock_sql_join + " FROM fund_morning_stock_info as t " + \
+            "LEFT JOIN fund_morning_quarter as a ON t.fund_code = a.fund_code AND t.quarter_index = a.quarter_index " + \
             "WHERE t.quarter_index = %s AND t.stock_position_total > 20" + \
             fund_code_list_sql + condition_stock_sql_join + ";"  # 大于20%股票持仓基金
 
-        self.cursor.execute(sql_query_sqecial_stock_fund_count, [quarter_index])    # 执行sql语句
+        self.cursor.execute(sql_query_sqecial_stock_fund_count, [
+                            quarter_index])    # 执行sql语句
         # print(self.cursor._last_executed)
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
     # total_asset 为null的基金
+
     def select_total_asset_is_null(self, quarter_index=None):
         if quarter_index == None:
             quarter_index = self.quarter_index
@@ -326,9 +353,9 @@ class FundQuery:
                 "d.top_stock_%s_code, d.top_stock_%s_name, d.top_stock_%s_portion" % (
                     str(index), str(index), str(index)) + ","
         stock_sql_join = stock_sql_join[0:-1]
-        
+
         sql = "SELECT a.fund_code, a.fund_name, a.fund_cat, c.name, b.total_asset, b.stock_position_total, b.stock_position_ten, " + stock_sql_join + \
-        " FROM fund_morning_base AS a LEFT JOIN fund_morning_quarter AS b ON a.fund_code = b.fund_code \
+            " FROM fund_morning_base AS a LEFT JOIN fund_morning_quarter AS b ON a.fund_code = b.fund_code \
         LEFT JOIN fund_morning_manager as c ON c.manager_id = b.manager_id \
         LEFT JOIN fund_morning_stock_info as d ON b.fund_code = d.fund_code AND b.quarter_index = d.quarter_index \
         WHERE a.fund_code = %s AND b.quarter_index = %s ;"

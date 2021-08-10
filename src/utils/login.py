@@ -114,9 +114,9 @@ def login_morning_star(redirect_url, is_cookies_login=False):
         2. 输入账号，密码，验证码登录（验证码识别正确率30%，识别识别支持重试）
     """
     login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-    if is_cookies_login:
+    cookie_str = os.getenv('login_cookie')
+    if is_cookies_login and cookie_str:
         target_url = redirect_url if redirect_url else login_url
-        cookie_str = os.getenv('login_cookie')
         set_cookies(chrome_driver, target_url, cookie_str)
     else:
         login_status = mock_login_site(

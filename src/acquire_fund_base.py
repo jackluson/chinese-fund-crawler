@@ -37,7 +37,6 @@ if __name__ == '__main__':
         while(page_start < end):
             results = each_fund_query.get_fund_from_snapshot_table_no_exist(
                 page_start, page_limit)
-            print("results", results)
             for record in results:
                 each_fund = FundSpider(
                     record[0], record[1], record[2], chrome_driver)
@@ -68,7 +67,6 @@ if __name__ == '__main__':
                     'company': each_fund.company,
                     'found_date': each_fund.found_date
                 }
-                print("base_dict", base_dict)
                 each_fund_insert.insert_fund_base_info(base_dict)
             page_start = page_start + page_limit
             print('page_start', page_start)

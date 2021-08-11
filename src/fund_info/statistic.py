@@ -7,6 +7,9 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
+from sql_model.stock_query import StockQuery
+from sql_model.fund_query import FundQuery
+from utils.index import get_quarter_index, fisrt_match_condition_from_list
 import time
 import datetime
 import re
@@ -15,9 +18,6 @@ import sys
 from pprint import pprint
 sys.path.append('../')
 sys.path.append(os.getcwd() + '/src')
-from utils.index import get_quarter_index, fisrt_match_condition_from_list
-from sql_model.fund_query import FundQuery
-from sql_model.stock_query import StockQuery
 
 
 class FundStatistic:
@@ -53,7 +53,7 @@ class FundStatistic:
         code_dict = dict()
         for result in results:
             # print(result)
-            totol_asset =  result[2]
+            totol_asset = result[2]
             for index in range(4, len(result), 3):
                 code = result[index]
                 name = result[index + 1]  # 仅以股票名称为key，兼容港股，A股
@@ -63,12 +63,14 @@ class FundStatistic:
                     #print('基金名称', result[1],'基金代码', result[0])
                     continue
                 key = fisrt_match_condition_from_list(list(code_dict), code)
-                holder_asset = round(portion * totol_asset / 100, 4) if totol_asset and portion else 0
+                holder_asset = round(
+                    portion * totol_asset / 100, 4) if totol_asset and portion else 0
                 if key == None and code and name:
                     key = str(code) + '-' + str(name)
                 if(key in code_dict and code != None):
                     count = code_dict[key]['count'] + 1
-                    holder_asset = code_dict[key]['holder_asset'] + holder_asset
+                    holder_asset = code_dict[key]['holder_asset'] + \
+                        holder_asset
                     code_dict[key] = {
                         'count': count,
                         'holder_asset': holder_asset
@@ -79,7 +81,7 @@ class FundStatistic:
                         'holder_asset': holder_asset
                     }
         filer_dict = dict()
- 
+
         for key, value in code_dict.items():  # for (key,value) in girl_dict.items() 这样加上括号也可以
             if value['count'] > filter_count and key != None:
                 filer_dict[key] = value
@@ -105,14 +107,14 @@ class FundStatistic:
         )
         code_dict = dict()
         for result in results:
-            #print(result)
+            # print(result)
             fund_info = {
                 '基金代码': result[0],
                 '基金名称': result[1],
                 '基金金额': result[2],
                 '股票总仓位': result[3],
             }
-            totol_asset =  result[2]
+            totol_asset = result[2]
             for index in range(4, len(result), 3):
                 code = result[index]
                 name = result[index + 1]
@@ -123,7 +125,8 @@ class FundStatistic:
                 if key == None and code and name:
                     key = str(code) + '-' + str(name)
                 #key = str(name)
-                holder_asset = round(portion * totol_asset / 100, 4) if totol_asset and portion else 0
+                holder_asset = round(
+                    portion * totol_asset / 100, 4) if totol_asset and portion else 0
                 if(key in code_dict and code != None):
                     code_dict[key]['count'] = code_dict[key]['count'] + 1
                     code_dict[key]['fund_list'].append({
@@ -136,23 +139,28 @@ class FundStatistic:
                     code_dict[key] = {
                         'count': 1,
                         'fund_list': [{
-                        **fund_info,
-                        '仓位占比': portion,
-                        '持有市值(亿元)': holder_asset,
-                        '仓位排名': int(index / 3)
-                    }]
+                            **fund_info,
+                            '仓位占比': portion,
+                            '持有市值(亿元)': holder_asset,
+                            '仓位排名': int(index / 3)
+                        }]
                     }
-        #for key, value in code_dict.items(): 
+        # for key, value in code_dict.items():
         #    print('key, value', key, value)
-        print('code_dict.items()', code_dict.items())
+        # print('code_dict.items()', code_dict.items())
         return list(code_dict.items())
-        #return sorted(code_dict.items(), key=lambda x: x[1]['count'], reverse=True)
+        # return sorted(code_dict.items(), key=lambda x: x[1]['count'], reverse=True)
     # 分组查询特定股票的每个季度基金持有总数
+
     def item_stock_fund_count(self, stock_code, fund_code_pool=None):
         return self.each_query.select_special_stock_fund_count(stock_code, fund_code_pool)
 
-    def select_special_stock_special_quarter_info(self, stock_code, quarter_index=None,fund_code_pool=None):
-        result =  self.each_query.select_special_stock_special_quarter_info(stock_code, quarter_index, fund_code_pool)
+    def select_special_stock_special_quarter_info(self, stock_code, quarter_index=None, fund_code_pool=None):
+        """
+        即将废弃
+        """
+        result = self.each_query.select_special_stock_special_quarter_info(
+            stock_code, quarter_index, fund_code_pool)
         target_stock_dict = {
             'count': len(result)
         }
@@ -163,12 +171,12 @@ class FundStatistic:
                 code = holders[index]
                 if code == stock_code:
                     portion = holders[index+1]
-                    holder_asset = round(portion * total_asset / 100, 4) if total_asset and portion else 0
+                    holder_asset = round(
+                        portion * total_asset / 100, 4) if total_asset and portion else 0
                     total_holder_asset = total_holder_asset + holder_asset
                     break
         target_stock_dict['holder_asset'] = total_holder_asset
         return target_stock_dict
-
 
     def select_fund_pool(self, *, morning_star_rating_5="", morning_star_rating_3="", **args):
         return self.each_query.select_certain_condition_funds(
@@ -186,7 +194,7 @@ class FundStatistic:
     def summary_special_funds_stock_detail(self, fund_code_pool, quarter_index=None):
         holder_stock_industry_list = []
         for fund_code in fund_code_pool:
-            fund_info = self.select_special_fund_info(fund_code, quarter_index )
+            fund_info = self.select_special_fund_info(fund_code, quarter_index)
             fund_code = fund_info[0]
             fund_name = fund_info[1]
             fund_cat = fund_info[2]
@@ -199,17 +207,22 @@ class FundStatistic:
                 stock_name = fund_info[index+1]
                 stock_portion = fund_info[index+2]
                 stock_index = int((index - 4) / 3)
-                stock_list_industry = [fund_code, fund_name,fund_cat,fund_manager, fund_total_asset, fund_total_portion, fund_ten_portion, 
-                                    stock_code, stock_name, stock_portion, stock_index]
-                #holder_stock_industry_list.append(stock_list_industry]
+                stock_list_industry = [fund_code, fund_name, fund_cat, fund_manager, fund_total_asset, fund_total_portion, fund_ten_portion,
+                                       stock_code, stock_name, stock_portion, stock_index]
+                # holder_stock_industry_list.append(stock_list_industry]
                 if bool(re.search("^\d{6}$", stock_code)):
-                    stock_list_industry_list = self.select_stock_pool_industry([stock_code])
+                    stock_list_industry_list = self.select_stock_pool_industry([
+                                                                               stock_code])
                     stock_list_industry_dict = stock_list_industry_list[0]
-                    industry_name_first = stock_list_industry_dict.get('industry_name_first')
-                    industry_name_second = stock_list_industry_dict.get('industry_name_second')
-                    industry_name_third = stock_list_industry_dict.get('industry_name_third')
+                    industry_name_first = stock_list_industry_dict.get(
+                        'industry_name_first')
+                    industry_name_second = stock_list_industry_dict.get(
+                        'industry_name_second')
+                    industry_name_third = stock_list_industry_dict.get(
+                        'industry_name_third')
 
-                    holder_stock_industry_list.append([*stock_list_industry, industry_name_third,industry_name_second, industry_name_first])
+                    holder_stock_industry_list.append(
+                        [*stock_list_industry, industry_name_third, industry_name_second, industry_name_first])
         return holder_stock_industry_list
 
     def query_all_stock_industry_info(self):

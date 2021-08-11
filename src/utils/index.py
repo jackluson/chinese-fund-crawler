@@ -2,7 +2,12 @@
 import time
 import datetime
 import os
+
+import re
 from threading import Thread, Lock
+
+import pandas as pd
+from openpyxl import load_workbook
 
 
 def lock_process(func):
@@ -123,6 +128,38 @@ def find_from_list_of_dict(dict_list, match_key, value):
             res = sub
             break
     return res
+
+
+def get_stock_market(stock_code):
+    if bool(re.search("^\d{5}$", stock_code)):
+        return '港股'
+    elif bool(re.search("^\d{6}$", stock_code)) and bool(re.search(
+            "^(00(0|1|2|3)\d{3})|(30(0|1)\d{3})|(60(0|1|2|3|5)\d{3})|68(8|9)\d{3}$", stock_code)):
+        return 'A股'
+    else:
+        return '其他'
+
+
+def update_xlsx_file(path, df_data, sheet_name):
+    if os.path.exists(path):
+        writer = pd.ExcelWriter(path, engine='openpyxl')
+        book = load_workbook(path)
+        # 表名重复，删掉，重写
+        if sheet_name in book.sheetnames:
+            del book[sheet_name]
+        if len(book.sheetnames) == 0:
+            df_data.to_excel(
+                path, sheet_name=sheet_name)
+            return
+        else:
+            writer.book = book
+            df_data.to_excel(
+                writer, sheet_name=sheet_name)
+        writer.save()
+        writer.close()
+    else:
+        df_data.to_excel(
+            path, sheet_name=sheet_name)
 
 
 def bootstrap_thread(target_fn, total, thread_count=2):

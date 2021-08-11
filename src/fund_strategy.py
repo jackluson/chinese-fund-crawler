@@ -7,17 +7,23 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
+
+import os
 from sql_model.fund_query import FundQuery
 import pandas as pd
-from openpyxl import load_workbook,Workbook
+from openpyxl import load_workbook, Workbook
 from openpyxl.utils import get_column_letter
 from utils.index import get_last_quarter_str
 from pprint import pprint
 
-# 输出高分基金
-def output_high_score_funds(each_query,quarter_index=None):
+
+def output_high_score_funds(each_query, quarter_index=None):
+    """
+    输出高分基金
+    """
     if quarter_index == None:
-       quarter_index = get_last_quarter_str()
+        quarter_index = get_last_quarter_str()
+    print("quarter_index", quarter_index)
     high_score_funds = each_query.select_high_score_funds(
         quarter_index=quarter_index)
     columns_bk = ['代码', '名称', '季度', '总资产', '现任基金经理管理起始时间', '投资风格', '三月最大回撤', '六月最大回撤', '夏普比率', '阿尔法系数', '贝塔系数',
@@ -34,27 +40,28 @@ def output_high_score_funds(each_query,quarter_index=None):
     # df_high_score_funds.to_excel(writer, sheet_name=quarter_index)
     # df2.to_excel(writer, sheet_name='Sheet2')
     path = './output/xlsx/high-score-funds_log.xlsx'
-    writer = pd.ExcelWriter(path, engine='openpyxl')
-    book = load_workbook(path)
-    writer.book = book
-    df_high_score_funds.to_excel(writer, sheet_name=quarter_index)
-    writer.save()
-    writer.close()
+    if os.path.exists(path):
+        writer = pd.ExcelWriter(path, engine='openpyxl')
+        book = load_workbook(path)
+        writer.book = book
+        # 表名重复，删掉，重写
+        if quarter_index in book.sheetnames:
+            del book[quarter_index]
+
+        if len(book.sheetnames) == 0:
+            df_high_score_funds.to_excel(
+                path, sheet_name=quarter_index)
+        else:
+            writer.book = book
+            df_high_score_funds.to_excel(
+                writer, sheet_name=quarter_index)
+        writer.save()
+        writer.close()
+    else:
+        df_high_score_funds.to_excel(
+            path, sheet_name=quarter_index)
+
 
 if __name__ == '__main__':
-    #each_query = FundQuery()
-    #quarter_index = '2020-Q4'
-    #output_high_score_funds()
-    dest_filename = 'empty_book.xlsx'
-    #wb = Workbook(dest_filename)
-    wb = load_workbook(filename = 'empty_book.xlsx')
-    ws = wb.active
-    print("ws", ws)
-    #ws.merge_cells('A2:D2')
-    ws.merge_cells(start_row=2, start_column=1, end_row=4, end_column=4)
-    ws.merge_cells('J17:J20')
-    ws.column_dimensions.group('A','D', hidden=True)
-    ws.row_dimensions.group(1,10, hidden=True)
-    wb.save(dest_filename)
-    #ws.unmerge_cells('A2:D2')
-
+    each_query = FundQuery()
+    output_high_score_funds(each_query)

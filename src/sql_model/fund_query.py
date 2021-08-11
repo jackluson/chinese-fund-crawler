@@ -111,7 +111,6 @@ class FundQuery(BaseQuery):
             sql, [self.quarter_date, self.quarter_index, page_start, page_limit])    # 执行sql语句
         return self.cursor.fetchall()    # 获取查询的所有记录
 
-    @lock_process
     def select_high_score_funds(self, *, quarter_index=None):
         """获取高分基金池
 
@@ -262,8 +261,8 @@ class FundQuery(BaseQuery):
                 return ()
             list_str = ', '.join(fund_code_pool)
             fund_code_list_sql = "AND t.fund_code IN (" + list_str + ")"
-        sql_query_quarter = "SELECT t.fund_code, t.fund_name, u.total_asset, t.stock_position_total, " + stock_sql_join + \
-            " FROM fund_morning_stock_info as t LEFT JOIN fund_morning_quarter as u ON u.fund_code = t.fund_code AND u.quarter_index = t.quarter_index  WHERE u.quarter_index = %s AND t.stock_position_total > 20 " + \
+        sql_query_quarter = "SELECT t.fund_code, a.fund_name, u.total_asset, t.stock_position_total, " + stock_sql_join + \
+            " FROM fund_morning_stock_info as t LEFT JOIN fund_morning_quarter as u ON u.fund_code = t.fund_code AND u.quarter_index = t.quarter_index LEFT JOIN fund_morning_base as a ON a.fund_code = t.fund_code  WHERE u.quarter_index = %s AND t.stock_position_total > 20 " + \
             fund_code_list_sql + \
             ";"  # 大于20%股票持仓基金
         if quarter_index == None:
@@ -299,6 +298,9 @@ class FundQuery(BaseQuery):
     #
 
     def select_special_stock_special_quarter_info(self, stock_code, quarter_index=None,  fund_code_pool=None):
+        """
+        即将废弃
+        """
         if quarter_index == None:
             quarter_index = self.quarter_index
 

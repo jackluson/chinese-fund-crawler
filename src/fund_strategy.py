@@ -9,12 +9,11 @@ Copyright (c) 2021 Camel Lu
 '''
 
 import os
-from sql_model.fund_query import FundQuery
-import pandas as pd
-from openpyxl import load_workbook, Workbook
-from openpyxl.utils import get_column_letter
-from utils.index import get_last_quarter_str
 from pprint import pprint
+import pandas as pd
+
+from sql_model.fund_query import FundQuery
+from utils.index import get_last_quarter_str, update_xlsx_file
 
 
 def output_high_score_funds(each_query, quarter_index=None):
@@ -33,33 +32,8 @@ def output_high_score_funds(each_query, quarter_index=None):
     df_high_score_funds = pd.DataFrame(high_score_funds, columns=columns)
 
     pprint(df_high_score_funds)
-    # df_high_score_funds.to_excel(
-    #     './output/xlsx/high-score-funds_log.xlsx', sheet_name=quarter_index)
-    # with pd.ExcelWriter('./output/xlsx/high-score-funds_log.xlsx', engine='openpyxl') as writer:
-    #     df_high_score_funds.to_excel(writer, sheet_name=quarter_index)
-    # df_high_score_funds.to_excel(writer, sheet_name=quarter_index)
-    # df2.to_excel(writer, sheet_name='Sheet2')
-    path = './output/xlsx/high-score-funds_log.xlsx'
-    if os.path.exists(path):
-        writer = pd.ExcelWriter(path, engine='openpyxl')
-        book = load_workbook(path)
-        writer.book = book
-        # 表名重复，删掉，重写
-        if quarter_index in book.sheetnames:
-            del book[quarter_index]
-
-        if len(book.sheetnames) == 0:
-            df_high_score_funds.to_excel(
-                path, sheet_name=quarter_index)
-        else:
-            writer.book = book
-            df_high_score_funds.to_excel(
-                writer, sheet_name=quarter_index)
-        writer.save()
-        writer.close()
-    else:
-        df_high_score_funds.to_excel(
-            path, sheet_name=quarter_index)
+    path = './outcome/数据整理/funds/high-score-funds.xlsx'
+    update_xlsx_file(path, df_high_score_funds, quarter_index)
 
 
 if __name__ == '__main__':

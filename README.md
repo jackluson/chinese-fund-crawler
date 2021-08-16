@@ -17,6 +17,7 @@
   - [性价比高的名单统计](#性价比高的名单统计)
   - [基金重仓股](#基金重仓股)
   - [个股基金持仓明细](#个股基金持仓明细)
+
 ## 前言
 
 晨星网，国际权威评级机构 Morningstar 的中国官方网站，所以它的基金数据是很有参考性的，尤其是评级数据
@@ -73,7 +74,7 @@
 
 ## 本地运行
 
-> 本地前置条件： 安装好 chromedriver 驱动， 安装 tesseract 并将 tesseract 加到环境变量下(识别二维码需要，如果是用 cookies 方式则不需要)，如果是需要连接数据库的话，还要配置好表结构
+> 本地前置条件： 安装好 chromedriver 驱动， 安装 tesseract(识别二维码需要，如果是用 cookies 方式则不需要) 并将 tesseract 加到环境变量下，运行报错的话可能没有安装训练库，可参考[https://stackoverflow.com/questions/14800730/tesseract-running-error](https://stackoverflow.com/questions/14800730/tesseract-running-error)，如果是需要连接数据库的话，还要配置好表结构
 
 1. 从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
 
@@ -143,7 +144,9 @@
 以上问题，我都做了相对应的处理。
 
 ## 数据汇总&分析
+
 基于上面的数据，简单做了如下数据汇总
+
 ### 性价比高的名单统计
 
 根据基金评级，基金成立时间，基金夏普比例，基金经理从业时间等指标，从几千只股票中选出几十只性比价高的基金，如图所示：
@@ -154,6 +157,7 @@
 [精心整理，给大家汇总一批性价比高的基金名单](https://mp.weixin.qq.com/s?__biz=MzkyMzI0Njc1Ng==&mid=2247483971&idx=1&sn=a3fd6c71bb42f20d9e17e3f9034a128b&chksm=c1e94b88f69ec29e77cfb2605bef58a158b96150bd1e7615d1f2d4ddfad7cf25b296cd55d941&token=893404419&lang=zh_CN#rd)
 
 ### 基金重仓股
+
 统计股票在这些基金中出现的频率,筛选出 top 50，可用于投资理财辅助，如图：
 
 <img src="./screenshot/fund_statistic.png" />
@@ -163,6 +167,7 @@
 <img src="./screenshot/top_50_2021_q1_vs_2020_q4.png" />
 
 ### 个股基金持仓明细
+
 上面我们知道了基金重仓股排名，我们当然也可以统计某一只股票的基金持仓明细，如图所示，中国平安基金持仓明细：
 <img src="./screenshot/certain_stock_holder_detail.png" />
 

@@ -261,47 +261,85 @@ def all_stock_holder_detail(each_statistic, *, quarter_index=None, threshold=0):
         update_xlsx_file(path, df_list, quarter_index)
 
 
-def get_special_fund_code_holder_stock_detail(quarter_index, each_statistic):
+def get_special_fund_code_holder_stock_detail(each_statistic, quarter_index=None):
     """ 获取某些基金的十大持仓股票信息
     """
+    if quarter_index == None:
+        quarter_index = get_last_quarter_str()
+        print("quarter_index", quarter_index)
+    holder_history_list = [
+        {
+            '001811': {
+                'name': '中欧明睿新常态混合A',
+                'position': 0.2
+            },
+            '001705': {
+                'name': '泓德战略转型股票',
+                'position': 0.2
+            },
+            '163415': {
+                'name': '兴全商业模式优选混合',
+                'position': 0.2
+            },
+            '001043': {
+                'name': '工银美丽城镇主题股票A',
+                'position': 0.1
+            },
+            '000547': {
+                'name': '建信健康民生混合',
+                'position': 0.1
+            },
+            '450001': {
+                'name': '国富中国收益混合',
+                'position': 0.2
+            },
+        },
+        # """
+        # 根据二季度高分基金池数据，以及近期组合表现，剔除一些不在高性价比基金池中基金，以及结合近期市场风格进行调仓以及调整成分基金比例。
+        # 保留：中欧明睿新常态混合A(001811),建信健康民生混合(000547),
+        # 调出：泓德战略转型股票(001705),兴全商业模式优选混合(163415),工银美丽城镇主题股票A(001043),国富中国收益混合(450001)
+        # 调入：工银新金融股票（001054），工银瑞信战略转型主题股票A（000991），汇丰晋信动态策略混合A（540003）兴全绿色投资混合（163409）
+        # 结合以上基金的近期表现，以及风控，以及维持整个组合均衡配置（目前组合偏科技板块）做出如上调整，欢迎大家跟调。
+        # """
+        {
+            '001811': {
+                'name': '中欧明睿新常态混合A',
+                'position': 0.2
+            },
+            '001054': {
+                'name': '工银新金融股票',
+                'position': 0.2
+            },
+            '000991': {
+                'name': '工银瑞信战略转型主题股票A',
+                'position': 0.1
+            },
+            '540003': {
+                'name': '汇丰晋信动态策略混合A',
+                'position': 0.2
+            },
+            '000547': {
+                'name': '建信健康民生混合',
+                'position': 0.1
+            },
+            '163409': {
+                'name': '兴全绿色投资混合(LOF)',
+                'position': 0.2
+            },
+        },
+    ]
     # 基金组合信息
-    fund_portfolio = {
-        '001811': {
-            'name': '中欧明睿新常态混合A',
-            'position': 0.2
-        },
-        '001705': {
-            'name': '泓德战略转型股票',
-            'position': 0.2
-        },
-        '163415': {
-            'name': '兴全商业模式优选混合',
-            'position': 0.2
-        },
-        '001043': {
-            'name': '工银美丽城镇主题股票A',
-            'position': 0.2
-        },
-        '000547': {
-            'name': '建信健康民生混合',
-            'position': 0.2
-        },
-        '450001': {
-            'name': '国富中国收益混合',
-            'position': 0.2
-        },
-    }
+    fund_portfolio = holder_history_list[1]
     fund_code_pool = list(fund_portfolio.keys())
     holder_stock_industry_list = each_statistic.summary_special_funds_stock_detail(
         fund_code_pool, quarter_index)
-    path = './outcome/数据整理/funds/' + '/' + '高分权益基金组合十大持仓明细' + '.xlsx'
+    path = './outcome/数据整理/funds/高分权益基金组合十大持仓明细-加工.xlsx'
     columns = ['基金代码', '基金名称', '基金类型', '基金经理', '基金总资产（亿元）', '基金股票总仓位',
                '十大股票仓位', '股票代码', '股票名称', '所占仓位', '所处仓位排名',  '三级行业', '二级行业', '一级行业']
     df_a_list = pd.DataFrame(holder_stock_industry_list, columns=columns)
+    print("df_a_list", df_a_list)
 
-    writer = pd.ExcelWriter(path, engine='xlsxwriter')
-    df_a_list.to_excel(writer, sheet_name='十大持仓明细--' + quarter_index)
-    writer.save()
+    update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + '2021-08-28')
 
 
 if __name__ == '__main__':
@@ -316,7 +354,7 @@ if __name__ == '__main__':
     # all_stocks_rank(each_statistic)
 
     # 获取Top100股票排名
-    t100_stocks_rank(each_statistic=each_statistic)
+    # t100_stocks_rank(each_statistic=each_statistic)
 
     # 获取某些基金的十大持仓股票信息
-    #get_special_fund_code_holder_stock_detail(quarter_index, each_statistic)
+    get_special_fund_code_holder_stock_detail(each_statistic)

@@ -132,7 +132,8 @@ class FundQuery(BaseQuery):
             a.total_asset, a.quarter_index FROM fund_morning_quarter as a \
             LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
               LEFT JOIN fund_morning_manager AS c ON c.manager_id = a.manager_id \
-            WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E' AND b.fund_name NOT LIKE '%%H' AND b.fund_name NOT LIKE '%%指数%%'  AND a.quarter_index = %s AND \
+            WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E' AND b.fund_name NOT LIKE '%%H%%' AND b.fund_name NOT LIKE '%%指数%%'  \
+            AND a.quarter_index = %s AND a.total_asset < 100 AND \
             a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
             AND a.risk_assessment_sharpby > 1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s \
             ORDER BY a.risk_assessment_sharpby DESC, a.risk_statistics_alpha DESC;"
@@ -142,9 +143,9 @@ class FundQuery(BaseQuery):
                     a.risk_assessment_risk_coefficient, a.risk_rating_2, a.risk_rating_3, a.risk_rating_5, a.morning_star_rating_5,\
                     a.morning_star_rating_3, a.stock_position_total, a.stock_position_ten FROM fund_morning_quarter as a \
                     LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
-                    WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E'  AND a.quarter_index = %s AND \
+                    WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%H' AND b.fund_name NOT LIKE '%%E'  AND a.quarter_index = %s AND \
                     a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
-                    AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s \
+                    AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s  \
                     ORDER BY a.risk_assessment_sharpby DESC, a.risk_rating_5 DESC;"
         self.cursor.execute(sql, [quarter_index, last_year_date])    # 执行sql语句
         results = self.cursor.fetchall()    # 获取查询的所有记录

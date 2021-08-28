@@ -8,12 +8,11 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2021 Camel Lu
 '''
 
+from utils.index import get_last_quarter_str, update_xlsx_file
+from sql_model.fund_query import FundQuery
 import os
 from pprint import pprint
 import pandas as pd
-
-from sql_model.fund_query import FundQuery
-from utils.index import get_last_quarter_str, update_xlsx_file
 
 
 def output_high_score_funds(each_query, quarter_index=None):
@@ -31,7 +30,8 @@ def output_high_score_funds(each_query, quarter_index=None):
                '两年风险评级', '三年风险评级', '五年风险评级', '阿尔法系数', '贝塔系数', '标准差', '总资产', '数据更新时间']
     df_high_score_funds = pd.DataFrame(high_score_funds, columns=columns)
 
-    pprint(df_high_score_funds)
+    # pprint(df_high_score_funds)
+
     path = './outcome/数据整理/funds/high-score-funds.xlsx'
     update_xlsx_file(path, df_high_score_funds, quarter_index)
 

@@ -12,6 +12,8 @@
 - [技术点](#技术点)
 - [爬虫流程](#爬虫流程)
 - [本地运行](#本地运行)
+  - [本地运行前置条件](#本地运行前置条件)
+  - [文件目录介绍](#文件目录介绍)
 - [其他](#其他)
 - [数据汇总&分析](#数据汇总&分析)
   - [性价比高的名单统计](#性价比高的名单统计)
@@ -74,15 +76,20 @@
 
 ## 本地运行
 
-> 本地前置条件： 安装好 chromedriver 驱动， 安装 tesseract(识别二维码需要，如果是用 cookies 方式则不需要) 并将 tesseract 加到环境变量下，运行报错的话可能没有安装训练库，可参考[https://stackoverflow.com/questions/14800730/tesseract-running-error](https://stackoverflow.com/questions/14800730/tesseract-running-error)，如果是需要连接数据库的话，还要配置好表结构
+### 本地运行前置条件：
 
-1. 从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
+1.  安装好 chromedriver 驱动（版本需要和你本地电脑 Chrome 浏览器版本一致）， 安装 tesseract(识别二维码需要，如果是用 cookies 方式则不需要) 并将 tesseract 加到环境变量下，运行报错的话可能没有安装训练库，可参考[https://stackoverflow.com/questions/14800730/tesseract-running-error](https://stackoverflow.com/questions/14800730/tesseract-running-error)，如果是需要连接数据库的话，还要配置好表结构
+2.  如果需要存数据到数据库，需要建好对应表结构，(运行`acquire_fund_snapshot.py`可以存在 Excel，其他目前都是存在数据库中)
 
-   > `cp .env.example .env`
+3.  从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
 
-根据自己情况改环境变量值，例如晨星用户名，密码，执行特定的爬虫脚本
+    > `cp .env.example .env`
 
-2. 文件目录介绍
+    根据自己情况改环境变量值，例如晨星用户名，密码，执行特定的爬虫脚本
+
+4.  运行 -- 先按顺序运行`acquire_fund_snapshot`,`acquire_fund_base`, `acquire_fund_quarter`获取数据源，后面根据自己需要运行统计，分析文件
+
+### 文件目录介绍
 
 ```bash
 .

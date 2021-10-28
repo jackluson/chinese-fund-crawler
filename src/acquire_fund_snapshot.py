@@ -8,17 +8,22 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2020 Camel Lu
 '''
 
-import re
 import math
 import os
+import re
+import sys
+
+sys.path.append(os.getcwd() + '/src')
+
 from time import sleep
-from bs4 import BeautifulSoup
 import pandas as pd
+from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import WebDriverWait
-from lib.mysnowflake import IdWorker
-from utils.login import login_morning_star
-from utils.index import get_star_count
+
 from db.connect import connect
+from lib.mysnowflake import IdWorker
+from utils.index import get_star_count
+from utils.login import login_morning_star
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
@@ -55,8 +60,8 @@ def get_fund_list():
     morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
     chrome_driver = login_morning_star(morning_fund_selector_url, False)
     # 定义起始页码
-    page_num = 443
-    page_count = 25
+    page_num = 9
+    page_count = 25 # 晨星固定分页数
     page_num_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
 
@@ -138,6 +143,7 @@ def get_fund_list():
         cursor.executemany(sql_insert, fund_list)
         connect_instance.commit()
         # print('fund_list', fund_list)
+        # 输出为csv文件
         with open(result_dir + output_file_name, 'a') as csv_file:
             for fund_item in fund_list:
                 output_line = ', '.join(str(x) for x in fund_item) + '\n'

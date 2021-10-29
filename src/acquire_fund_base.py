@@ -7,7 +7,6 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2020 Camel Lu
 '''
-from time import sleep
 from threading import Lock
 from utils.login import login_morning_star
 from utils.index import bootstrap_thread
@@ -16,21 +15,20 @@ from lib.mysnowflake import IdWorker
 from sql_model.fund_query import FundQuery
 from sql_model.fund_insert import FundInsert
 
-
-if __name__ == '__main__':
+def acquire_fund_base():
     lock = Lock()
     each_fund_query = FundQuery()
     each_fund_insert = FundInsert()
 
     record_total = each_fund_query.get_fund_count_from_snapshot_no_exist()    # 获取记录条数
 
-    IdWorker = IdWorker()
+    idWorker = IdWorker()
     print('record_total', record_total)
     error_funds = []  # 一些异常的基金详情页，如果发现记录该基金的code
 
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-        chrome_driver = login_morning_star(login_url, True)
+        chrome_driver = login_morning_star(login_url, False)
         page_start = start
         page_limit = 10
         # 遍历从基金列表的单支基金
@@ -56,7 +54,7 @@ if __name__ == '__main__':
                     continue
                 # 拼接sql需要的数据
                 lock.acquire()
-                snow_flake_id = IdWorker.get_id()
+                snow_flake_id = idWorker.get_id()
                 lock.release()
                 base_dict = {
                     'id': snow_flake_id,
@@ -71,5 +69,9 @@ if __name__ == '__main__':
             page_start = page_start + page_limit
             print('page_start', page_start)
         chrome_driver.close()
-    bootstrap_thread(crawlData, record_total, 2)
+    
+    bootstrap_thread(crawlData, record_total, 4)
     print('error_funds', error_funds)
+
+if __name__ == '__main__':
+    acquire_fund_base()

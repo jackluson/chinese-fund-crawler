@@ -9,25 +9,23 @@ Copyright (c) 2021 Camel Lu
 '''
 
 import logging
-import os
 import sys
 
 sys.path.append('./src')
 
 from src.acquire_fund_snapshot import get_fund_list
-
+from src.acquire_fund_base import acquire_fund_base
 
 def main():
     input_value = input("请输入下列序号执行操作:\n \
         1.“快照” \n \
-        2.“行业个股”\n \
-        3.“股票日更”\n \
-        4.“个股+日更”\n \
-        5.“财务指标”\n \
-        6.“A股估值”\n \
+        2.“新基入库”\n \
     输入：")
     if input_value == '1' or input_value == '快照':
-        get_fund_list()  # 执行申万行业信息入库
+        page_index = 1
+        get_fund_list(page_index)  # 执行申万行业信息入库
+    elif input_value == '2' or input_value == '新基入库':
+        acquire_fund_base()  # 执行行业股票信息入库
 
 
 if __name__ == '__main__':

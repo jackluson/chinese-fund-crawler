@@ -8,17 +8,22 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2020 Camel Lu
 '''
 
-import re
 import math
 import os
+import re
+import sys
+
+sys.path.append(os.getcwd() + '/src')
+
 from time import sleep
-from bs4 import BeautifulSoup
 import pandas as pd
+from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import WebDriverWait
-from lib.mysnowflake import IdWorker
-from utils.login import login_morning_star
-from utils.index import get_star_count
+
 from db.connect import connect
+from lib.mysnowflake import IdWorker
+from utils.index import get_star_count, bootstrap_thread
+from utils.login import login_morning_star
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
@@ -51,13 +56,12 @@ def text_to_be_present_in_element(locator, text, next_page_locator):
     return _predicate
 
 
-def get_fund_list():
+def get_fund_list(page_index):
     morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
     chrome_driver = login_morning_star(morning_fund_selector_url, False)
     # 定义起始页码
-    page_num = 443
-    page_count = 25
-    page_num_total = math.ceil(int(chrome_driver.find_element_by_xpath(
+    page_count = 25 # 晨星固定分页数
+    page_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
 
     result_dir = './output/'
@@ -66,22 +70,22 @@ def get_fund_list():
     env_snapshot_table_name = os.getenv('snapshot_table_name')
     output_file_name = env_snapshot_table_name + ".csv"
     # 设置表头
-    if page_num == 1:
+    if page_index == 1:
         with open(result_dir + output_file_name, 'w+') as csv_file:
             csv_file.write(output_head)
-    while page_num <= page_num_total:
+    while page_index <= page_total:
         # 求余
-        remainder = page_num_total % 10
+        remainder = page_total % 10
         # 判断是否最后一页
         num = (remainder +
-               2) if page_num > (page_num_total - remainder) else 12
+               2) if page_index > (page_total - remainder) else 12
         xpath_str = '/html/body/form/div[8]/div/div[4]/div[3]/div[3]/div[1]/a[%s]' % (
             num)
-        print('page_num', page_num)
+        print('page_index', page_index)
 
         # 等待，直到当前页（样式判断）等于page_num
         WebDriverWait(chrome_driver, timeout=600).until(text_to_be_present_in_element(
-            "/html/body/form/div[8]/div/div[4]/div[3]/div[3]/div[1]/span[@style='margin-right:5px;font-weight:Bold;color:red;']", str(page_num), xpath_str))
+            "/html/body/form/div[8]/div/div[4]/div[3]/div[3]/div[1]/span[@style='margin-right:5px;font-weight:Bold;color:red;']", str(page_index), xpath_str))
         sleep(1)
         # 列表用于存放爬取的数据
         id_list = []  # 雪花id
@@ -138,6 +142,7 @@ def get_fund_list():
         cursor.executemany(sql_insert, fund_list)
         connect_instance.commit()
         # print('fund_list', fund_list)
+        # 输出为csv文件
         with open(result_dir + output_file_name, 'a') as csv_file:
             for fund_item in fund_list:
                 output_line = ', '.join(str(x) for x in fund_item) + '\n'
@@ -149,11 +154,12 @@ def get_fund_list():
         # 点击下一页
         next_page.click()
         sleep(3)
-        page_num += 1
+        page_index += 1
     chrome_driver.close()
     print('end')
     # chrome_driver.close()
 
 
 if __name__ == "__main__":
-    fund_list = get_fund_list()
+    page_index = 1
+    fund_list = get_fund_list(page_index)

@@ -9,9 +9,8 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2020 Camel Lu
 '''
 
-import math
-from threading import Thread, Lock, current_thread
-from time import sleep, time
+from threading import Lock, current_thread
+from time import sleep
 from pprint import pprint
 from fund_info.crawler import FundSpider
 from fund_info.api import FundApier
@@ -36,13 +35,12 @@ def get_total_asset(fund_code, platform):
         total_asset = each_fund.get_total_asset()
     return total_asset
 
-
-if __name__ == '__main__':
+def acquire_fund_quarter():
     lock = Lock()
     each_fund_query = FundQuery()
     record_total = each_fund_query.get_crawler_quarter_fund_total()    # 获取记录条数
     print('record_total', record_total)
-    IdWorker = IdWorker()
+    idWorker = IdWorker()
     result_dir = './output/'
     fund_csv = FundCSV(result_dir)
     fund_csv.write_season_catch_fund(True)
@@ -50,7 +48,7 @@ if __name__ == '__main__':
 
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-        chrome_driver = login_morning_star(login_url, True)
+        chrome_driver = login_morning_star(login_url, False)
         page_start = start
         page_limit = 10
         while(page_start < end):
@@ -96,7 +94,7 @@ if __name__ == '__main__':
                     fund_csv.write_season_catch_fund(False, output_line)
                 # 入库
                 lock.acquire()
-                snow_flake_id = IdWorker.get_id()
+                snow_flake_id = idWorker.get_id()
                 lock.release()
                 # 开始存入数据
                 fund_insert = FundInsert()
@@ -189,3 +187,6 @@ if __name__ == '__main__':
 
     bootstrap_thread(crawlData, record_total, 4)
     exit()
+
+if __name__ == '__main__':
+    acquire_fund_quarter()

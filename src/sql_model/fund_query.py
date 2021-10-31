@@ -78,13 +78,12 @@ class FundQuery(BaseQuery):
         # 过滤没有股票持仓的基金
         sql_count = "SELECT COUNT(1) FROM fund_morning_base as a \
         WHERE a.fund_cat NOT LIKE '%%货币%%' \
-        AND a.fund_cat NOT LIKE '%%纯债基金%%' \
-        AND a.fund_cat NOT LIKE '目标日期' \
         AND a.is_archive = 0 \
         AND a.found_date <= %s \
         AND a.fund_name NOT LIKE '%%C' \
         AND a.fund_name NOT LIKE '%%B' \
-        AND a.fund_cat NOT LIKE '%%短债基金%%' \
+        AND a.fund_cat NOT IN ('利率债', '短债基金', '短债型', '短债基金(封闭)', '纯债基金', '纯债基金(封闭)', \
+        '普通债券型', '普通债券型基金','普通债券型基金(封闭)', '信用债', '信用债(封闭)','目标日期' ) \
         AND a.fund_code	NOT IN( SELECT fund_code FROM fund_morning_quarter as b \
         WHERE b.quarter_index = %s);"
         self.cursor.execute(sql_count, [self.quarter_date, self.quarter_index])
@@ -98,9 +97,8 @@ class FundQuery(BaseQuery):
             t.morning_star_code, t.fund_name, t.fund_cat \
             FROM fund_morning_base as t \
             WHERE t.fund_cat NOT LIKE '%%货币%%' \
-            AND t.fund_cat NOT LIKE '%%纯债基金%%' \
-            AND t.fund_cat NOT LIKE '目标日期' \
-            AND t.fund_cat NOT LIKE '%%短债基金%%' \
+            AND t.fund_cat NOT IN ('利率债', '短债基金', '短债型', '短债基金(封闭)', '纯债基金', '纯债基金(封闭)', \
+            '普通债券型', '普通债券型基金','普通债券型基金(封闭)', '信用债', '信用债(封闭)','目标日期' ) \
             AND t.found_date <= %s \
             AND t.is_archive = 0 \
             AND t.fund_name NOT LIKE '%%C' \

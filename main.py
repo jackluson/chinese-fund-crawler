@@ -17,7 +17,7 @@ from src.acquire_fund_snapshot import get_fund_list
 from src.acquire_fund_base import acquire_fund_base
 from src.fund_info.supplement import FundSupplement
 from src.acquire_fund_quarter import acquire_fund_quarter
-from src.fund_statistic import get_special_fund_code_holder_stock_detail, all_stocks_rank,all_stock_holder_detail
+from src.fund_statistic import get_special_fund_code_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail
 
 
 def main():
@@ -47,7 +47,7 @@ def main():
     elif input_value == '6' or input_value == "基金持仓股排名":
         all_stocks_rank()
     elif input_value == '7' or input_value == "基金重仓股Top100":
-        all_stocks_rank()
+        t100_stocks_rank()
     elif input_value == '8' or input_value == "股票持仓基金明细":
         all_stock_holder_detail()
     else:

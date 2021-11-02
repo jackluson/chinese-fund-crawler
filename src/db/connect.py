@@ -18,7 +18,7 @@ def connect():
 def connect_dict():
     load_dotenv()
     env_db_host = os.getenv('db_host')
-    env_db_name = os.getenv('db_name')
+    env_db_name = os.getenv('db_stock_name')
     env_db_user = os.getenv('db_user')
     env_db_password = os.getenv('db_password')
     connect = pymysql.connect(

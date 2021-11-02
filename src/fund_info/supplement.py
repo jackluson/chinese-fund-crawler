@@ -8,7 +8,6 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2021 Camel Lu
 '''
 
-import time
 from utils.index import get_last_quarter_str
 from sql_model.fund_query import FundQuery
 from sql_model.fund_update import FundUpdate
@@ -23,7 +22,7 @@ class FundSupplement:
     def update_archive_status(self):
       fund_query = FundQuery()
       each_fund_update = FundUpdate()
-      funds = fund_query.select_quarter_fund(0, 10000)
+      funds = fund_query.select_quarter_fund(0, 15000)
       for fund_item in funds:
         fund_code = fund_item[0]
         fund_api = FundApier(fund_code, platform='zh_fund')

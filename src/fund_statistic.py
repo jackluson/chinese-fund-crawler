@@ -52,7 +52,7 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
     """
     if quarter_index == None:
         quarter_index = get_last_quarter_str(2)
-    print("quarter_index", quarter_index)
+    print("比较-->quarter_index", quarter_index)
 
     last_quarter_input_file = './outcome/数据整理/strategy/all_stock_rank/' + \
         quarter_index + '.xlsx'
@@ -122,10 +122,11 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
         # print(item_tuple)
     return filter_list
 
-# T100权重股排名
 
-
-def t100_stocks_rank(quarter_index=None, *, each_statistic):
+def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
+    # T100权重股排名
+    if each_statistic == None:
+        each_statistic = FundStatistic()
     if quarter_index == None:
         quarter_index = get_last_quarter_str(1)
     last_quarter_index = get_last_quarter_str(2)
@@ -145,13 +146,14 @@ def t100_stocks_rank(quarter_index=None, *, each_statistic):
     # df_filter_list.to_excel(output_file, sheet_name=sheet_name)
 
 
-def all_stocks_rank(each_statistic):
+def all_stocks_rank(each_statistic=None):
+    if each_statistic == None:
+        each_statistic = FundStatistic()
     """所有股票排名
     """
     quarter_index = get_last_quarter_str(1)
-    print("quarter_index", quarter_index)
+    print("该quarter_index为", quarter_index)
     last_quarter_index = get_last_quarter_str(2)
-    sheet_name = last_quarter_index + '基金重仓股T100'
     columns = ['代码',
                '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
     output_file = './outcome/数据整理/strategy/all_stock_rank/' + quarter_index + '.xlsx'
@@ -159,7 +161,6 @@ def all_stocks_rank(each_statistic):
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
         filter_count=0)
-    #print("stock_top_list", stock_top_list)
     all_a_stocks_industry_info_list = each_statistic.query_all_stock_industry_info()
     a_stock_list = []
     hk_stock_list = []
@@ -203,6 +204,7 @@ def all_stocks_rank(each_statistic):
     a_columns = [*columns, '三级行业', '二级行业', '一级行业']
 
     df_a_list = pd.DataFrame(a_stock_compare_list, columns=a_columns)
+    print("df_a_list", df_a_list)
     df_hk_list = pd.DataFrame(hk_stock_compare_list, columns=columns)
     df_other_list = pd.DataFrame(other_stock_compare_list, columns=columns)
 
@@ -216,7 +218,7 @@ def all_stocks_rank(each_statistic):
     writer.save()
 
 
-def all_stock_holder_detail(each_statistic, *, quarter_index=None, threshold=0):
+def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshold=0):
     """ 所有股票的基金持仓细节
 
     Args:
@@ -224,6 +226,8 @@ def all_stock_holder_detail(each_statistic, *, quarter_index=None, threshold=0):
         quarter_index (str, optional): 季度字符串. Defaults to None.
         threshold (int, optional): 输出门槛. Defaults to 0.
     """
+    if each_statistic == None:
+        each_statistic = FundStatistic()
     if quarter_index == None:
         quarter_index = get_last_quarter_str()
     stock_list = each_statistic.all_stock_fund_count_and_details(
@@ -261,9 +265,11 @@ def all_stock_holder_detail(each_statistic, *, quarter_index=None, threshold=0):
         update_xlsx_file(path, df_list, quarter_index)
 
 
-def get_special_fund_code_holder_stock_detail(each_statistic, quarter_index=None):
+def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index=None):
     """ 获取某些基金的十大持仓股票信息
     """
+    if each_statistic == None:
+        each_statistic = FundStatistic()
     if quarter_index == None:
         quarter_index = get_last_quarter_str()
         print("quarter_index", quarter_index)
@@ -333,13 +339,13 @@ def get_special_fund_code_holder_stock_detail(each_statistic, quarter_index=None
     fund_code_pool = list(fund_portfolio.keys())
     holder_stock_industry_list = each_statistic.summary_special_funds_stock_detail(
         fund_code_pool, quarter_index)
-    path = './outcome/数据整理/funds/高分权益基金组合十大持仓明细-加工.xlsx'
+    path = './outcome/数据整理/funds/高分权益基金组合十大持仓明细.xlsx'
     columns = ['基金代码', '基金名称', '基金类型', '基金经理', '基金总资产（亿元）', '基金股票总仓位',
                '十大股票仓位', '股票代码', '股票名称', '所占仓位', '所处仓位排名',  '三级行业', '二级行业', '一级行业']
     df_a_list = pd.DataFrame(holder_stock_industry_list, columns=columns)
-    print("df_a_list", df_a_list)
+    # print("df_a_list", df_a_list)
 
-    update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + '2021-08-28')
+    update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + quarter_index)
 
 
 if __name__ == '__main__':

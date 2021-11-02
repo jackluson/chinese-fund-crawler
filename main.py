@@ -18,7 +18,7 @@ from src.acquire_fund_base import acquire_fund_base
 from src.fund_info.supplement import FundSupplement
 from src.acquire_fund_quarter import acquire_fund_quarter
 from src.fund_statistic import get_special_fund_code_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail
-
+from src.fund_strategy import output_high_score_funds
 
 def main():
     input_value = input("请输入下列序号执行操作:\n \
@@ -30,6 +30,7 @@ def main():
         6.“基金持仓股排名”\n \
         7.“基金重仓股Top100”\n \
         8.“股票持仓基金明细”\n \
+        9.“高分基金”\n \
     输入：")
     if input_value == '1' or input_value == '快照':
         page_index = 1
@@ -50,6 +51,8 @@ def main():
         t100_stocks_rank()
     elif input_value == '8' or input_value == "股票持仓基金明细":
         all_stock_holder_detail()
+    elif input_value == '9' or input_value == "高分基金":
+        output_high_score_funds()
     else:
         print('输入有误')
 

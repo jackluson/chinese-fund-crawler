@@ -10,15 +10,16 @@ Copyright (c) 2021 Camel Lu
 
 from utils.index import get_last_quarter_str, update_xlsx_file
 from sql_model.fund_query import FundQuery
-import os
 from pprint import pprint
 import pandas as pd
 
 
-def output_high_score_funds(each_query, quarter_index=None):
+def output_high_score_funds(each_query=None, quarter_index=None):
     """
     输出高分基金
     """
+    if each_query == None:
+        each_query = FundQuery()
     if quarter_index == None:
         quarter_index = get_last_quarter_str()
     print("quarter_index", quarter_index)

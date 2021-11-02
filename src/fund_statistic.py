@@ -123,8 +123,10 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
     return filter_list
 
 
-def t100_stocks_rank(quarter_index=None, *, each_statistic):
+def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
     # T100权重股排名
+    if each_statistic == None:
+        each_statistic = FundStatistic()
     if quarter_index == None:
         quarter_index = get_last_quarter_str(1)
     last_quarter_index = get_last_quarter_str(2)

@@ -12,7 +12,6 @@ Copyright (c) 2020 Camel Lu
 import time
 import re
 import decimal
-import os
 from pprint import pprint
 import pandas as pd
 import numpy as np
@@ -35,11 +34,10 @@ def get_fund_code_pool():
         'operator': '='
     }
     last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
-    last_year_date = time.strftime('%Y-%m-%d', last_year_time)
+    # last_year_date = time.strftime('%Y-%m-%d', last_year_time)
     condition_dict = {
         'morning_star_rating_5': morning_star_rating_5_condition,
         'morning_star_rating_3': morning_star_rating_3_condition,
-        # 'manager_start_date': '2020-05-25'
     }
     fund_code_pool = each_statistic.select_fund_pool(
         **condition_dict,
@@ -54,16 +52,12 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
         quarter_index = get_last_quarter_str(2)
     print("比较-->quarter_index", quarter_index)
 
-    last_quarter_input_file = './outcome/数据整理/strategy/all_stock_rank/' + \
-        quarter_index + '.xlsx'
-    data_last_quarter = pd.read_excel(io=last_quarter_input_file, engine="openpyxl",  dtype={
-        "代码": np.str}, sheet_name=None)
+    last_quarter_input_file = './outcome/数据整理/strategy/all_stock_rank/' + quarter_index + '.xlsx'
+    data_last_quarter = pd.read_excel(io=last_quarter_input_file, engine="openpyxl",  dtype={"代码": np.str}, sheet_name=None)
 
     if market:
         df_data_target_market = data_last_quarter.get(market)
-        df_data_target_market[quarter_index + '持有数量（只）'] = df_data_target_market[quarter_index + '持有数量（只）'].astype(
-            int)
-    each_statistic = FundStatistic()
+        df_data_target_market[quarter_index + '持有数量（只）'] = df_data_target_market[quarter_index + '持有数量（只）'].astype(int)
 
     filter_list = []
     for stock in stock_list:
@@ -76,7 +70,6 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
         holder_asset = stock_holder_detail.get('holder_asset')
         if not market:
             target_market = get_stock_market(stock_code)
-            print("target_market", target_market)
             df_data_target_market = data_last_quarter.get(target_market)
         target_loc = df_data_target_market[df_data_target_market['代码'] == stock_code]
         last_holder_count = 0
@@ -89,33 +82,21 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
                 target_loc[col_target].iloc[0]), 4)
         diff_holder_count = holder_count - last_holder_count
         diff_holder_asset = holder_asset - last_holder_asset
-
-        diff_holder_count_percent = '{:.2%}'.format(
-            diff_holder_count / last_holder_count) if last_holder_count != 0 else "+∞"
-
-        diff_holder_asset_percent = '{:.2%}'.format(
-            diff_holder_asset / last_holder_asset) if last_holder_asset != 0 else "+∞"
+        diff_holder_count_percent = '{:.2%}'.format(diff_holder_count / last_holder_count) if last_holder_count != 0 else "+∞"
+        diff_holder_asset_percent = '{:.2%}'.format(diff_holder_asset / last_holder_asset) if last_holder_asset != 0 else "+∞"
         # flag = '📈' if diff_holder_count > 0 else '📉'
         # if diff_holder_count == 0:
         #     flag = '⏸'
         flag_count = 'up' if diff_holder_count > 0 else 'down'
-        if diff_holder_count == 0:
-            flag = '='
         flag_asset = 'up' if diff_holder_asset > 0 else 'down'
-        if diff_holder_asset == 0:
-            flag = '='
 
         item_tuple = [stock_code, stock_name, holder_count, last_holder_count,
                       diff_holder_count, diff_holder_count_percent, flag_count, holder_asset, last_holder_asset, diff_holder_asset, diff_holder_asset_percent, flag_asset]
         if is_A_stock:
-            industry_name_third = stock_holder_detail.get(
-                'industry_name_third')
-            industry_name_second = stock_holder_detail.get(
-                'industry_name_second')
-            industry_name_first = stock_holder_detail.get(
-                'industry_name_first')
-            item_tuple = [*item_tuple, industry_name_third,
-                          industry_name_second, industry_name_first]
+            industry_name_third = stock_holder_detail.get('industry_name_third')
+            industry_name_second = stock_holder_detail.get('industry_name_second')
+            industry_name_first = stock_holder_detail.get('industry_name_first')
+            item_tuple = [*item_tuple, industry_name_third,industry_name_second, industry_name_first]
 
         # if diff_percent == "+∞" or not float(diff_percent.rstrip('%')) < -20:
         filter_list.append(item_tuple)
@@ -132,14 +113,12 @@ def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
     last_quarter_index = get_last_quarter_str(2)
     output_file = './outcome/数据整理/strategy/top100_rank.xlsx'
     sheet_name = quarter_index + '基金重仓股T100'
-    columns = ['代码',
-               '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
+    columns = ['代码','名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
 
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
         filter_count=80)
     stock_top_list = stock_top_list[:100]  # 获取top100权重股
-    # pprint(stock_top_list)
     filter_list = stocks_compare(stock_top_list)
     df_filter_list = pd.DataFrame(filter_list, columns=columns)
     update_xlsx_file(output_file, df_filter_list, sheet_name)
@@ -154,8 +133,7 @@ def all_stocks_rank(each_statistic=None):
     quarter_index = get_last_quarter_str(1)
     print("该quarter_index为", quarter_index)
     last_quarter_index = get_last_quarter_str(2)
-    columns = ['代码',
-               '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
+    columns = ['代码','名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
     output_file = './outcome/数据整理/strategy/all_stock_rank/' + quarter_index + '.xlsx'
 
     stock_top_list = each_statistic.all_stock_fund_count(
@@ -167,7 +145,6 @@ def all_stocks_rank(each_statistic=None):
     other_stock_list = []
     for stock_name_code in stock_top_list:
         stock_code = stock_name_code[0].split('-', 1)[0]
-
         #path = 'other'
         if bool(re.search("^\d{5}$", stock_code)):
             #path = '港股'
@@ -176,8 +153,7 @@ def all_stocks_rank(each_statistic=None):
             # 'A股/深证主板'、'A股/创业板'、'A股/上证主板'、'A股/科创板'
             a_condition = bool(re.search(
                 "^(00(0|1|2|3)\d{3})|(30(0|1)\d{3})|(60(0|1|2|3|5)\d{3})|68(8|9)\d{3}$", stock_code))
-            target_item = find_from_list_of_dict(
-                all_a_stocks_industry_info_list, 'stock_code', stock_code)
+            target_item = find_from_list_of_dict(all_a_stocks_industry_info_list, 'stock_code', stock_code)
             if a_condition and target_item:
                 stock_name_code[1]['industry_name_first'] = target_item.get(
                     'industry_name_first')
@@ -204,7 +180,6 @@ def all_stocks_rank(each_statistic=None):
     a_columns = [*columns, '三级行业', '二级行业', '一级行业']
 
     df_a_list = pd.DataFrame(a_stock_compare_list, columns=a_columns)
-    print("df_a_list", df_a_list)
     df_hk_list = pd.DataFrame(hk_stock_compare_list, columns=columns)
     df_other_list = pd.DataFrame(other_stock_compare_list, columns=columns)
 
@@ -251,22 +226,16 @@ def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshol
                 path = 'A股/科创板'
             else:
                 print('stock_name_code', stock_name_code)
-        hold_fund_count = stock[1]['count']
-        hold_fund_list = sorted(
-            stock[1]['fund_list'], key=lambda x: x['持有市值(亿元)'], reverse=True)
+        hold_fund_list = sorted(stock[1]['fund_list'], key=lambda x: x['持有市值(亿元)'], reverse=True)
         df_list = pd.DataFrame(hold_fund_list)
-        # if stock_code == 'NTES':
-        #    print('stock_code', df_list)
         stock_name_code = stock_name_code.replace('-*', '-').replace('/', '-')
         path = './outcome/数据整理/stocks/' + path + '/' + stock_name_code + '.xlsx'
         path = path.replace('\/', '-')
-        print("path", path)
-
         update_xlsx_file(path, df_list, quarter_index)
 
 
 def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index=None):
-    """ 获取某些基金的十大持仓股票信息
+    """获取某些基金的十大持仓股票信息
     """
     if each_statistic == None:
         each_statistic = FundStatistic()
@@ -337,11 +306,9 @@ def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index
     # 基金组合信息
     fund_portfolio = holder_history_list[1]
     fund_code_pool = list(fund_portfolio.keys())
-    holder_stock_industry_list = each_statistic.summary_special_funds_stock_detail(
-        fund_code_pool, quarter_index)
+    holder_stock_industry_list = each_statistic.summary_special_funds_stock_detail(fund_code_pool, quarter_index)
     path = './outcome/数据整理/funds/高分权益基金组合十大持仓明细.xlsx'
-    columns = ['基金代码', '基金名称', '基金类型', '基金经理', '基金总资产（亿元）', '基金股票总仓位',
-               '十大股票仓位', '股票代码', '股票名称', '所占仓位', '所处仓位排名',  '三级行业', '二级行业', '一级行业']
+    columns = ['基金代码', '基金名称', '基金类型', '基金经理', '基金总资产（亿元）', '基金股票总仓位', '十大股票仓位', '股票代码', '股票名称', '所占仓位', '所处仓位排名',  '三级行业', '二级行业', '一级行业']
     df_a_list = pd.DataFrame(holder_stock_industry_list, columns=columns)
     # print("df_a_list", df_a_list)
 

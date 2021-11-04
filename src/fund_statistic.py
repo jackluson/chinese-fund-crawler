@@ -18,6 +18,10 @@ import numpy as np
 from fund_info.statistic import FundStatistic
 from utils.index import get_last_quarter_str, get_stock_market, find_from_list_of_dict, update_xlsx_file
 
+import os
+from openpyxl import load_workbook
+
+
 
 def get_fund_code_pool():
     # fund_code_pool = ['000001', '160133', '360014', '420002',
@@ -315,6 +319,23 @@ def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index
     update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + quarter_index)
 
 
+def calculate_quarter_fund_count():
+    stock_name_code = '600519-贵州茅台'
+    path = './outcome/数据整理/stocks/A股/上证主板/' + stock_name_code + '.xlsx'
+    xls = pd.ExcelFile(path, engine='openpyxl')
+    quarter_list = []
+    sum_column_name = '总计'
+    for sheet_name in reversed(xls.sheet_names):
+        if sheet_name == '总计':
+            continue
+        item_quarter_data = [sheet_name]
+        df_cur_sheet = xls.parse(sheet_name)
+        item_quarter_data.append(len(df_cur_sheet))
+        item_quarter_data.append(round(df_cur_sheet['持有市值(亿元)'].sum(),2))
+        quarter_list.append(item_quarter_data)
+    columns = ["日期", "持有数量", '持有市值']
+    df_quarter_list = pd.DataFrame(quarter_list, columns=columns)
+    update_xlsx_file(path, df_quarter_list, sum_column_name)
 if __name__ == '__main__':
     each_statistic = FundStatistic()
     # quarter_index = "2021-Q2"
@@ -330,4 +351,6 @@ if __name__ == '__main__':
     # t100_stocks_rank(each_statistic=each_statistic)
 
     # 获取某些基金的十大持仓股票信息
-    get_special_fund_code_holder_stock_detail(each_statistic)
+    # get_special_fund_code_holder_stock_detail(each_statistic)
+
+    calculate_quarter_fund_count()

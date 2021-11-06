@@ -8,7 +8,6 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2021 Camel Lu
 '''
 import time
-import datetime
 import os
 
 
@@ -24,3 +23,6 @@ def write_fund_json_data(data, filename, file_dir=None):
     with open(file_dir + filename, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.close()
+
+def read_dir_all_file(path):
+    return os.listdir(path)

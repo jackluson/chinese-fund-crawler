@@ -11,7 +11,6 @@ from sql_model.stock_query import StockQuery
 from sql_model.fund_query import FundQuery
 from utils.index import get_quarter_index, fisrt_match_condition_from_list
 import time
-import datetime
 import re
 import os
 import sys
@@ -111,7 +110,7 @@ class FundStatistic:
             fund_info = {
                 '基金代码': result[0],
                 '基金名称': result[1],
-                '基金金额': result[2],
+                '基金规模': result[2],
                 '股票总仓位': result[3],
             }
             totol_asset = result[2]

@@ -35,6 +35,8 @@ class BaseQuery(BaseModel):
             return sql_str
         # field_name = field_dict.get('name')
         field_value = field_dict.get('value')
+        if isinstance(field_value, str):
+            field_value = "\'" + field_value + "\'"
         operator = field_dict.get('operator')
         if not field_name or not field_value or not operator:
             return sql_str
@@ -149,8 +151,8 @@ class FundQuery(BaseQuery):
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results
 
-    @lock_process
     def select_certain_condition_funds(self, *, quarter_index=None, morning_star_rating_5=None, morning_star_rating_3=None, manager_start_date=None, stock_position_total=None, stock_position_ten=None, **rest_dicts):
+        print("rest_dicts", rest_dicts)
         if quarter_index == None:
             quarter_index = self.quarter_index
 
@@ -173,6 +175,9 @@ class FundQuery(BaseQuery):
 
         risk_assessment_sharpby_sql = self.format_sql(
             'a', 'risk_assessment_sharpby', risk_assessment_sharpby)
+        
+        company = rest_dicts.get('company')
+        company_sql = self.format_sql('b', 'company', company)
 
         risk_rating_2 = rest_dicts.get('risk_rating_2')
 
@@ -193,7 +198,7 @@ class FundQuery(BaseQuery):
 
         sql = "SELECT a.fund_code FROM fund_morning_quarter as a \
             LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
-            WHERE a.quarter_index = '{quarter_index}' AND b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E' {morning_star_rating_5} {morning_star_rating_3} {stock_position_total} {stock_position_ten} \
+            WHERE a.quarter_index = '{quarter_index}' {company} {morning_star_rating_5} {morning_star_rating_3} {stock_position_total} {stock_position_ten} \
             {risk_assessment_sharpby} {risk_rating_2} {risk_rating_3} {risk_rating_3} {manager_start_date}"
 
         format_dict = {
@@ -206,7 +211,8 @@ class FundQuery(BaseQuery):
             'risk_assessment_sharpby': risk_assessment_sharpby_sql,
             'risk_rating_2': risk_rating_2_sql,
             'risk_rating_3': risk_rating_3_sql,
-            'risk_rating_5': risk_rating_5_sql
+            'risk_rating_5': risk_rating_5_sql,
+            'company': company_sql
         }
         sql_format = sql.format(**format_dict)
         self.cursor.execute(sql_format)    # 执行sql语句

@@ -19,12 +19,8 @@ from fund_info.statistic import FundStatistic
 from utils.index import get_last_quarter_str, get_stock_market, find_from_list_of_dict, update_xlsx_file
 from utils.file_op import read_dir_all_file
 
-def get_fund_code_pool():
-    # fund_code_pool = ['000001', '160133', '360014', '420002',
-    #                   '420102', '000409', '000418', '000746',
-    #                   '000751', '000884', '000991', '001043',
-    #                   '001054', '001104', '001410', '001473',
-    #                   '519714', '000003', '000011', '000029']
+def get_fund_code_pool(condition_dict):
+    each_statistic = FundStatistic()
     morning_star_rating_5_condition = {
         'value': 4,
         'operator': '>='
@@ -33,19 +29,15 @@ def get_fund_code_pool():
         'value': 5,
         'operator': '='
     }
-    last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
+    # last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
     # last_year_date = time.strftime('%Y-%m-%d', last_year_time)
-    condition_dict = {
-        'morning_star_rating_5': morning_star_rating_5_condition,
-        'morning_star_rating_3': morning_star_rating_3_condition,
-    }
     fund_code_pool = each_statistic.select_fund_pool(
         **condition_dict,
     )
     return fund_code_pool
 
 
-def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_pool=None, is_A_stock=None):
+def stocks_compare(stock_list, *, market=None, quarter_index=None, is_A_stock=None):
     """与某个季度数据进行比较
     """
     if quarter_index == None:
@@ -104,6 +96,41 @@ def stocks_compare(stock_list, *, market=None, quarter_index=None, fund_code_poo
     return filter_list
 
 
+def select_condition_stocks_rank(each_statistic=None, *, quarter_index=None):
+    if each_statistic == None:
+        each_statistic = FundStatistic()
+    if quarter_index == None:
+        quarter_index = get_last_quarter_str(1)
+    columns = ['代码','名称', '持有数量（只）', '持有市值（亿元）']
+    company = '广发基金管理有限公司'
+    company_condition = {
+        'value': company,
+        'operator': '='
+    }
+    output_file = './outcome/数据整理/stocks/condition/'+ company +'.xlsx'
+    condition_dict = {
+        # 'morning_star_rating_5': morning_star_rating_5_condition,
+        # 'morning_star_rating_3': morning_star_rating_3_condition,
+        'company': company_condition
+    }
+    fund_pool = get_fund_code_pool(condition_dict)
+    stock_top_list = each_statistic.all_stock_fund_count(
+        quarter_index=quarter_index,
+        fund_code_pool=fund_pool,
+        filter_count=0)
+    stock_rank_list = []
+    for stock_name_code in stock_top_list:
+        stock_code = stock_name_code[0].split('-', 1)[0]
+        stock_name = stock_name_code[0].split('-', 1)[1]
+        stock_count = stock_name_code[1]['count']
+        stock_holder_asset = stock_name_code[1]['holder_asset']
+        stock_rank_item = [stock_code, stock_name, stock_count, stock_holder_asset]
+        stock_rank_list.append(stock_rank_item)
+    df_stock_top_list = pd.DataFrame(stock_rank_list, columns=columns)
+    print(df_stock_top_list)
+
+    update_xlsx_file(output_file, df_stock_top_list, quarter_index)
+
 def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
     # T100权重股排名
     if each_statistic == None:
@@ -114,7 +141,7 @@ def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
     output_file = './outcome/数据整理/strategy/top100_rank.xlsx'
     sheet_name = quarter_index + '基金重仓股T100'
     columns = ['代码','名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比', '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
-
+    
     stock_top_list = each_statistic.all_stock_fund_count(
         quarter_index=quarter_index,
         filter_count=80)
@@ -195,7 +222,6 @@ def all_stocks_rank(each_statistic=None):
 
 def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshold=0):
     """ 所有股票的基金持仓细节
-
     Args:
         each_statistic (class): 统计类
         quarter_index (str, optional): 季度字符串. Defaults to None.
@@ -338,10 +364,6 @@ def calculate_quarter_fund_count():
             df_quarter_list = pd.DataFrame(quarter_list, columns=columns)
             update_xlsx_file(path, df_quarter_list, sum_column_name)
 if __name__ == '__main__':
-    each_statistic = FundStatistic()
-    # quarter_index = "2021-Q2"
-    # read_excel(path, 'A股', '601888', '2021-Q1持有市值（亿元）')
-
     # 所有股票的基金持仓细节
     # all_stock_holder_detail(each_statistic)
 
@@ -354,4 +376,5 @@ if __name__ == '__main__':
     # 获取某些基金的十大持仓股票信息
     # get_special_fund_code_holder_stock_detail(each_statistic)
 
-    calculate_quarter_fund_count()
+    # calculate_quarter_fund_count()
+    select_condition_stocks_rank()

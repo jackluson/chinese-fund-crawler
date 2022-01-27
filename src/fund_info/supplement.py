@@ -23,15 +23,16 @@ class FundSupplement:
       fund_query = FundQuery()
       each_fund_update = FundUpdate()
       funds = fund_query.select_quarter_fund(0, 15000)
+      print("funds's len", len(funds))
       for fund_item in funds:
         fund_code = fund_item[0]
         fund_api = FundApier(fund_code, platform='zh_fund')
         fund_api.get_analyse_info_zh()
         buy_status = fund_api.buy_status
-        if buy_status == '已清盘':
+        if buy_status == '已清盘' or buy_status == '终止上市' :
           each_fund_update.update_archive_status(1, fund_code=fund_code)
           continue
-        print('fund_api', fund_api.buy_status, fund_api.sell_status)
+        print('没有归档基金状态:', fund_code, fund_api.buy_status, fund_api.sell_status)
 
     def update_fund_total_asset(self):
       fund_query = FundQuery()

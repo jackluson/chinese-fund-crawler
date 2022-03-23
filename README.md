@@ -187,3 +187,4 @@
 <img width=480  src="./screenshot/qrcode_merge.png" />
 
 如果有问题，有兴趣的话，欢迎提 issue，私聊，star。
+[![Page Views Count](https://badges.toozhao.com/badges/01FYTB9DBYFE4G1408VKKT7H4G/green.svg)](https://badges.toozhao.com/stats/01FYTB9DBYFE4G1408VKKT7H4G "Get your own page views count badge on badges.toozhao.com")

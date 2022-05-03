@@ -258,12 +258,14 @@ def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshol
         elif bool(re.search("^\d{6}$", stock_code)):
             if bool(re.search("^00(0|1|2|3)\d{3}$", stock_code)):
                 path = 'A股/深证主板'
-            elif bool(re.search("^300\d{3}$", stock_code)):
+            elif bool(re.search("^30(0|1)\d{3}$", stock_code)):
                 path = 'A股/创业板'
             elif bool(re.search("^60(0|1|2|3|5)\d{3}$", stock_code)):
                 path = 'A股/上证主板'
             elif bool(re.search("^68(8|9)\d{3}$", stock_code)):
                 path = 'A股/科创板'
+            elif bool(re.search("^(8|4)(3|7)\d{4}$", stock_code)):
+                path = 'A股/北交所'
             else:
                 print('stock_name_code', stock_name_code)
         hold_fund_list = sorted(
@@ -281,7 +283,7 @@ def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index
     if each_statistic == None:
         each_statistic = FundStatistic()
     if quarter_index == None:
-        quarter_index = get_last_quarter_str(2)
+        quarter_index = get_last_quarter_str(1)
         print("quarter_index", quarter_index)
     holder_history_list = [
         {
@@ -382,24 +384,24 @@ def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index
         ]
     ]
     # 基金组合信息
-    fund_portfolio = holder_history_list[2]
+    fund_portfolio = holder_history_list[len(holder_history_list) - 1]
     fund_code_pool = [] #list(fund_portfolio.keys())
     for item in fund_portfolio:
         fund_code_pool.append(item.get('code'))
     print("fund_code_pool", fund_code_pool)
     holder_stock_industry_list = each_statistic.summary_special_funds_stock_detail(
         fund_code_pool, quarter_index)
-    path = './outcome/数据整理/funds/高分权益基金组合十大持仓明细-加工.xlsx'
+    path = './outcome/数据整理/funds/高分权益基金组合十大持仓明细.xlsx'
     columns = ['基金代码', '基金名称', '基金类型', '基金经理', '基金总资产（亿元）', '基金股票总仓位',
                '十大股票仓位', '股票代码', '股票名称', '所占仓位', '所处仓位排名',  '三级行业', '二级行业', '一级行业']
     df_a_list = pd.DataFrame(holder_stock_industry_list, columns=columns)
     # print("df_a_list", df_a_list)
 
-    update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + '2022-01')
+    update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + quarter_index)
 
 
 def calculate_quarter_fund_count():
-    stock_markets = ['A股/上证主板', 'A股/创业板', 'A股/科创板', 'A股/深证主板', '港股', '其他']
+    stock_markets = ['A股/上证主板', 'A股/创业板', 'A股/科创板', 'A股/深证主板', 'A股/北交所', '港股', '其他']
     for market in stock_markets:
         dir_path = './outcome/数据整理/stocks/' + market + '/'
         files = read_dir_all_file(dir_path)

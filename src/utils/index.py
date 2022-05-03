@@ -141,25 +141,29 @@ def get_stock_market(stock_code):
 
 
 def update_xlsx_file(path, df_data, sheet_name):
-    if os.path.exists(path):
-        writer = pd.ExcelWriter(path, engine='openpyxl')
-        book = load_workbook(path)
-        # 表名重复，删掉，重写
-        if sheet_name in book.sheetnames:
-            del book[sheet_name]
-        if len(book.sheetnames) == 0:
+    try:
+        if os.path.exists(path):
+            writer = pd.ExcelWriter(path, engine='openpyxl')
+            book = load_workbook(path)
+            # 表名重复，删掉，重写
+            if sheet_name in book.sheetnames:
+                del book[sheet_name]
+            if len(book.sheetnames) == 0:
+                df_data.to_excel(
+                    path, sheet_name=sheet_name)
+                return
+            else:
+                writer.book = book
+                df_data.to_excel(
+                    writer, sheet_name=sheet_name)
+            writer.save()
+            writer.close()
+        else:
             df_data.to_excel(
                 path, sheet_name=sheet_name)
-            return
-        else:
-            writer.book = book
-            df_data.to_excel(
-                writer, sheet_name=sheet_name)
-        writer.save()
-        writer.close()
-    else:
-        df_data.to_excel(
-            path, sheet_name=sheet_name)
+    except:
+        print("path", path)
+    
 
 
 def bootstrap_thread(target_fn, total, thread_count=2):

@@ -24,6 +24,8 @@ def acquire_fund_base():
 
     idWorker = IdWorker()
     print('record_total', record_total)
+    if record_total == 0:
+        return
     error_funds = []  # 一些异常的基金详情页，如果发现记录该基金的code
 
     def crawlData(start, end):

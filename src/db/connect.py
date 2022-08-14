@@ -1,28 +1,16 @@
 
-import os
-
 import pymysql
-from dotenv import load_dotenv
+from config.env import env_db_host, env_db_name, env_db_user, env_db_password, env_db_stock_name
 
 
 def connect():
-    load_dotenv()
-    env_db_host = os.getenv('db_host')
-    env_db_name = os.getenv('db_name')
-    env_db_user = os.getenv('db_user')
-    env_db_password = os.getenv('db_password')
     connect = pymysql.connect(
         host=env_db_host, user=env_db_user, password=env_db_password, db=env_db_name, charset='utf8')
     return connect
 
 def connect_dict():
-    load_dotenv()
-    env_db_host = os.getenv('db_host')
-    env_db_name = os.getenv('db_stock_name')
-    env_db_user = os.getenv('db_user')
-    env_db_password = os.getenv('db_password')
     connect = pymysql.connect(
-        host=env_db_host, user=env_db_user, password=env_db_password, db=env_db_name,
+        host=env_db_host, user=env_db_user, password=env_db_password, db=env_db_stock_name,
         charset='utf8')
     connect_dict = {
         'connect': connect,

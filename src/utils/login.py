@@ -63,41 +63,43 @@ def mock_login_site(chrome_driver, site_url, redirect_url=None):
     from selenium.webdriver.support import expected_conditions as EC
     username = chrome_driver.find_element_by_id('emailTxt')
     password = chrome_driver.find_element_by_id('pwdValue')
-    check_code = chrome_driver.find_element_by_id('txtCheckCode')
     env_username = os.getenv('morning_star_username')
     env_password = os.getenv('morning_star_password')
     username.send_keys(env_username)
     password.send_keys(env_password)
-    count = 1
-    flag = True
-    while count < 10 and flag:
-        code = identify_verification_code(chrome_driver)
-        check_code.clear()
-        time.sleep(1)
-        check_code.send_keys(code)
-        time.sleep(3)
-        submit = chrome_driver.find_element_by_id('loginGo')
-        submit.click()
-        # 通过弹窗判断验证码是否正确
-        time.sleep(3)
-        from selenium.webdriver.common.by import By
-        # message_container = chrome_driver.find_element_by_id('message-container')
-        try:
-            message_box = chrome_driver.find_element_by_id(
-                'message-container')
-            flag = message_box.is_displayed()
-            if flag:
-                close_btn = message_box.find_element(
-                    By.CLASS_NAME, "modal-close")
-                close_btn.click()
-                time.sleep(1)
-            print('flag', flag)
+    
+    # check_code = chrome_driver.find_element_by_id('txtCheckCode')
+    # count = 1
+    # flag = True
+    # while count < 10 and flag:
+    #     code = identify_verification_code(chrome_driver)
+    #     check_code.clear()
+    #     time.sleep(1)
+    #     check_code.send_keys(code)
+    #     time.sleep(3)
+    #     submit = chrome_driver.find_element_by_id('loginGo')
+    #     submit.click()
+    #     # 通过弹窗判断验证码是否正确
+    #     time.sleep(3)
+    #     from selenium.webdriver.common.by import By
+    #     # message_container = chrome_driver.find_element_by_id('message-container')
+    #     try:
+    #         message_box = chrome_driver.find_element_by_id(
+    #             'message-container')
+    #         flag = message_box.is_displayed()
+    #         if flag:
+    #             close_btn = message_box.find_element(
+    #                 By.CLASS_NAME, "modal-close")
+    #             close_btn.click()
+    #             time.sleep(1)
+    #         print('flag', flag)
 
-        except:
-            return True
+    #     except:
+    #         return True
 
-    if count > 10:
-        return False
+    # if count > 10:
+    #     return False
+    time.sleep(5)
     return True
 
 

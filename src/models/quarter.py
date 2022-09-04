@@ -10,19 +10,19 @@ Copyright (c) 2022 Camel Lu
 import sys
 sys.path.append('./src')
 from datetime import datetime
-from sqlalchemy import UniqueConstraint, CheckConstraint, MetaData, Table, Column, text, Integer, String, Date, DateTime, Enum, func
-from sqlalchemy.orm import validates
-from models.var import ORM_Base, engine
+from sqlalchemy import UniqueConstraint, Column, text, Integer, String, Date, DateTime, Enum, func
+from sqlalchemy.orm import validates, Session
+from models.var import ORM_Base, engine, Model
 
-class Quarter(ORM_Base):
+
+class Quarter(ORM_Base, Model):
     __tablename__ = 'quarter'
     id = Column(Integer, primary_key=True)
     quarter_index = Column(String(12), nullable=False, unique=True)
     start_time = Column(Date(), nullable=False, unique=True)
     end_time = Column(Date(), nullable=False, unique=True)
-    updated_at = Column(DateTime,  server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), onupdate=func.now()) 
-    created_at = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
-    # created_at = Column(DateTime, server_default=func.now(), comment='创建时间')
+    update_time = Column(DateTime,  server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), onupdate=func.now()) 
+    create_time = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
     UniqueConstraint(quarter_index, name='uix_1')
 
     def __init__(self, *args, **kwargs) -> None:
@@ -30,7 +30,6 @@ class Quarter(ORM_Base):
 
     @validates('end_time')
     def validate_start_time(self, key, end_time):
-        # end_time_stamp = time.mktime(end_time)
         end_time_stamp =  datetime.strptime (end_time, '%Y-%m-%d')
         start_time_stamp = datetime.strptime (self.start_time, '%Y-%m-%d')
         if end_time_stamp > start_time_stamp:

@@ -9,41 +9,68 @@ Copyright (c) 2022 Camel Lu
 '''
 import sys
 sys.path.append('./src')
-
-from sqlalchemy.orm import Session, registry, relationship, aliased
-from sqlalchemy import DATE, MetaData, Table, Column, Integer, BigInteger, String, ForeignKey, select
+from sqlalchemy.orm import registry, relationship
+from sqlalchemy import UniqueConstraint, Table, Column, Integer, BigInteger, String, ForeignKey, text, DateTime, Date, func
 from db.engine import get_engine
-from models.var import prefix, ORM_Base, engine
+from models.var import prefix, ORM_Base, engine, Model
+from lib.mysnowflake import IdWorker
+
 
 manager_table_name = prefix + 'manager'
 manager_table = Table(manager_table_name, ORM_Base.metadata, autoload=True, autoload_with=engine)
 
-class Manager(ORM_Base):
+idWorker = IdWorker()
+class Manager(ORM_Base, Model):
     __table__ = manager_table
     # managerAssoc = relationship("ManagerAssoc", back_populates="manager")
+
+    def __init__(self, **kwargs):
+        self.id = idWorker.get_id()
+        column_keys = self.__table__.columns.keys()
+        udpate_data = dict()
+        for key in kwargs.keys():
+            if key not in column_keys:
+                continue
+            else:
+                udpate_data[key] = kwargs[key]
+        ORM_Base.__init__(self, **udpate_data)
+        Model.__init__(self, **kwargs, id = self.id)
+
     def __repr__(self):
         return f"Manager(id={self.id!r}, name={self.name!r}, manager_id={self.manager_id!r})"
 
-class ManagerAssoc(ORM_Base):
+class ManagerAssoc(ORM_Base, Model):
     __tablename__ = prefix + 'manager_assoc'
-    manager_key = manager_table_name + '.manager_id'
     id = Column(BigInteger, primary_key=True)
     quarter_index = Column(String(12))
-    manager_id = Column(String(32), ForeignKey(manager_key))
+    manager_key = manager_table_name + '.manager_id'
+    manager_id = Column(String(32), ForeignKey(manager_key), nullable=False)
     fund_code_key = prefix + 'base' + '.fund_code'
-    fund_code= Column(String(10), ForeignKey(fund_code_key))
-    # manager = relationship('Manager', backref='manager_assoc')
+    fund_code= Column(String(10), ForeignKey(fund_code_key), nullable=False)
+    manager_start_date = Column(Date(), nullable=False)
+    update_time = Column(DateTime,  server_default=text('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'), onupdate=func.now()) 
+    create_time = Column(DateTime, server_default=text('CURRENT_TIMESTAMP'), comment='创建时间')
+
+    UniqueConstraint(quarter_index, manager_id, fund_code, name='uix_1')
+
+    manager = relationship('Manager', backref='manager_assoc')
     # fund_base = relationship("Fund", backref="manager_assoc")
+    def __init__(self, **kwargs):
+        self.id = idWorker.get_id()
+        ORM_Base.__init__(self, **kwargs)
+        Model.__init__(self, **kwargs, id = self.id)
 
     def __repr__(self):
-        return f"ManagerAssoc(id={self.id!r}, name={self.manager_id!r}, fullname={self.fund_code_id!r})"
+        return f"ManagerAssoc(id={self.id!r}, name={self.manager_id!r}, fullname={self.fund_code!r})"
 
 def create():
     ORM_Base.metadata.create_all(engine)
     # mapper_registry.metadata.create_all(engine)
     # ManagerAssoc.__table__.drop(engine)
 
+def drop():
+    ManagerAssoc.__table__.drop(engine)
 
 if __name__ == '__main__':
     create()
-    # demo()
+    # drop()

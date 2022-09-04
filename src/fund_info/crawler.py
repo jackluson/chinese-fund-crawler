@@ -36,7 +36,8 @@ class FundSpider:
         # 季度变动信息
         self.total_asset = None  # 总资产
         self.investname_style = None  # 投资风格
-        self.manager = dict()  # 基金经理,name,id,管理时间
+        self.manager_list = [] # 基金经理列表
+        # self.manager = dict()  # 基金经理,name,id,管理时间
         self.three_month_retracement = 0.0  # 最差六个月回报
         self.june_month_retracement = 0.0  # 最差六个月回报
         self.bond_position = dict(
@@ -60,11 +61,12 @@ class FundSpider:
         sleep(6)
         # 判断是否页面出错，重定向，如果是的话跳过
         if self._chrome_driver.current_url == 'https://www.morningstar.cn/errors/defaulterror.html':
-            return False
+            return True
         while self._chrome_driver.page_source == None:
             self._chrome_driver.refresh()
             print('wait:fund_code', self.fund_code)
             sleep(9)
+        return False
             # self._chrome_driver.execute_script('location.reload()')
 
     def get_element_text_by_class_name(self, class_name, parent_id):
@@ -134,27 +136,35 @@ class FundSpider:
 
     # 获取基金经理信息（多位在任基金经理，只需第一位）
     def get_fund_manager_info(self):
-        try:
-            # 基金经理
-            manager_ele = self._chrome_driver.find_element_by_id(
-                'qt_manager').find_element_by_xpath("ul")
-            manager_name = manager_ele.find_element_by_xpath(
-                "li[@class='col1']/a").text
-            manager_id = re.findall(
-                r'(?<=managerid=)(\w+)$', manager_ele.find_element_by_xpath("li[@class='col1']/a").get_attribute('href')).pop(0)
-            manager_start_date = manager_ele.find_element_by_xpath(
-                "li[@class='col1']/i").text[0:10]
-            manager_brife = manager_ele.find_element_by_xpath(
-                "li[@class='col2']").text
-            self.manager['id'] = manager_id
-            self.manager['name'] = manager_name
-            self.manager['start_date'] = manager_start_date
-            self.manager['brife'] = manager_brife
-        except NoSuchElementException:
-            self._is_trigger_catch = True
-            print('error_fund_info:', self.fund_code,
-                  '-', self.morning_star_code, 'get_fund_manager_info')
-            file_name = './abnormal/manager-' + self.fund_code + "-no_such_element.png"
+        manager_ele_list = self._chrome_driver.find_element_by_id(
+            'qt_manager').find_elements_by_xpath("ul")
+        for manager_ele in manager_ele_list:
+            try:
+                # 基金经理
+                manager_name = manager_ele.find_element_by_xpath(
+                    "li[@class='col1']/a").text
+                # 仅仅记录目前在职的
+                if '[离任]' in manager_name:
+                    continue
+                manager = dict()
+                manager['name'] = manager_name
+                manager_id = re.findall(
+                    r'(?<=managerid=)(\w+)$', manager_ele.find_element_by_xpath("li[@class='col1']/a").get_attribute('href')).pop(0)
+
+                if not manager_id:
+                    continue
+                manager['manager_id'] = manager_id
+                manager['manager_start_date'] = manager_ele.find_element_by_xpath(
+                    "li[@class='col1']/i").text[0:10]
+                
+                manager['brife'] = manager_ele.find_element_by_xpath(
+                    "li[@class='col2']").text
+                
+                self.manager_list.append(manager)
+
+            except NoSuchElementException:
+                self._is_trigger_catch = True
+                print('manager_ele', manager_ele)
             # self._chrome_driver.save_screenshot(file_name)
             # driver.get_screenshot_as_file(file_name)
             # raise  # 抛出异常，注释后则不抛出异常

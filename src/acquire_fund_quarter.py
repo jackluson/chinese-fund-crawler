@@ -20,6 +20,7 @@ from utils.login import login_morning_star
 from utils.index import bootstrap_thread
 from sql_model.fund_query import FundQuery
 from sql_model.fund_insert import FundInsert
+from models.manager import Manager, ManagerAssoc
 
 # 利用api获取同类基金的资产
 
@@ -56,11 +57,13 @@ def acquire_fund_quarter():
                 page_start, page_limit)
             for record in results:
                 sleep(1)
+                # 0P000179WG
+                # 001811 中欧明睿新常态混合A
                 each_fund = FundSpider(
                     record[0], record[1], record[2], chrome_driver)
-                is_normal = each_fund.go_fund_url()
+                is_error_page = each_fund.go_fund_url()
                 # 是否能正常跳转到基金详情页，没有的话，写入csv,退出当前循环
-                if is_normal == False:
+                if is_error_page == True:
                     # error_funds.append(each_fund.fund_code)
                     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
                                   each_fund.fund_name, record[3], page_start, '页面跳转有问题']
@@ -99,22 +102,33 @@ def acquire_fund_quarter():
                 # 开始存入数据
                 fund_insert = FundInsert()
                 # 基金经理
-                if each_fund.manager.get('id'):
-                    manager_dict = {
-                        'id': snow_flake_id,
-                        'manager_id': each_fund.manager.get('id'),
-                        'name': each_fund.manager.get('name'),
-                        'brife': each_fund.manager.get('brife')
+                first_manager_id = None
+                first_manager_start_date = None
+                for manager_item in each_fund.manager_list:
+                    manager = Manager(**manager_item)
+                    manager.upsert()
+                    if first_manager_id == None:
+                        first_manager_id = manager_item['manager_id']
+                    if first_manager_start_date == None:
+                        first_manager_start_date = manager_item['manager_start_date']
+                    
+                    manager_assoc_data = {
+                        'quarter_index': quarter_index,
+                        'manager_start_date': manager_item['manager_start_date'],
+                        'manager_id': manager_item['manager_id'],
+                        'fund_code': each_fund.fund_code
                     }
-                    fund_insert.insert_fund_manger_info(manager_dict)
+                    manager_assoc = ManagerAssoc(**manager_assoc_data)
+                    manager_assoc.upsert()
+                    # fund_insert.insert_fund_manger_info(manager_dict)
                 quarterly_dict = {
                     'id': snow_flake_id,
                     'quarter_index': each_fund.quarter_index,
                     'fund_code': each_fund.fund_code,
                     'investname_style': each_fund.investname_style,
                     'total_asset': each_fund.total_asset,
-                    'manager_id': each_fund.manager.get('id'),
-                    'manager_start_date': each_fund.manager.get('start_date'),
+                    'manager_id': first_manager_id, # 暂时存第一个基金经理信息
+                    'manager_start_date': first_manager_start_date,  # 暂时存第一个基金经理信息
                     'three_month_retracement': each_fund.three_month_retracement,
                     'june_month_retracement': each_fund.june_month_retracement,
                     'risk_statistics_alpha': each_fund.risk_statistics.get('alpha'),
@@ -183,8 +197,8 @@ def acquire_fund_quarter():
             print(current_thread().getName(), 'page_start', page_start)
             sleep(3)
         chrome_driver.close()
-
-    bootstrap_thread(crawlData, record_total, 8)
+    thread_count = 1
+    bootstrap_thread(crawlData, record_total, thread_count)
     exit()
 
 if __name__ == '__main__':

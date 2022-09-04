@@ -67,7 +67,8 @@ def mock_login_site(chrome_driver, site_url, redirect_url=None):
     env_password = os.getenv('morning_star_password')
     username.send_keys(env_username)
     password.send_keys(env_password)
-    
+    submit = chrome_driver.find_element_by_id('loginGo')
+    submit.click()
     # check_code = chrome_driver.find_element_by_id('txtCheckCode')
     # count = 1
     # flag = True

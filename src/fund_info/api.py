@@ -79,11 +79,11 @@ class FundApier:
                     pprint(res_json)
                     print('code:1', self.fund_code)
             else:
-                pprint(res.raw)
+                print('url:', url)
                 print('code:2', self.fund_code)
                 raise('中断')
         except:
-            pprint(res.raw)
+            print('url:', url)
             print('code:3', self.fund_code)
             raise('中断')
 
@@ -135,6 +135,7 @@ class FundApier:
                 'fundcode': self.fund_code,
             }
             res = requests.post(url, headers=headers, data=payload)
+            # print("res", res)
             res.encoding = "utf-8"
             time.sleep(1)
             try:
@@ -169,5 +170,5 @@ class FundApier:
 
 if __name__ == '__main__':
     fund_api = FundApier('000421', end_date='2021-05-31',)
-    # fund_api.get_analyse_info_zh()
+    fund_api.get_analyse_info_zh()
     # print("fund_api", fund_api)

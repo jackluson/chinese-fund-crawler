@@ -22,9 +22,12 @@ class FundSupplement:
     def update_archive_status(self):
       fund_query = FundQuery()
       each_fund_update = FundUpdate()
+      start = 0
       funds = fund_query.select_quarter_fund(0, 15000)
       print("funds's len", len(funds))
-      for fund_item in funds:
+      for index in range(start, len(funds)):
+        # print("index", index)
+        fund_item = funds[index]
         fund_code = fund_item[0]
         fund_api = FundApier(fund_code, platform='zh_fund')
         fund_api.get_analyse_info_zh()

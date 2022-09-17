@@ -28,15 +28,12 @@ from utils.login import login_morning_star
 connect_instance = connect()
 cursor = connect_instance.cursor()
 
-'''
-判读是否当前页一致，没有的话，切换上一页，下一页操作
-'''
 
 
 def text_to_be_present_in_element(locator, text, next_page_locator):
     """ An expectation for checking if the given text is present in the
     specified element.
-    locator, text
+    locator, text -- 判读是否当前页一致，没有的话，切换上一页，下一页操作
     """
     def _predicate(driver):
         try:
@@ -63,7 +60,6 @@ def get_fund_list(page_index):
     page_count = 25 # 晨星固定分页数
     page_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
-
     result_dir = './output/'
     output_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
         '类型' + ',' + '三年评级' + ',' + '五年评级' + ',' + '今年回报率' + '\n'
@@ -119,13 +115,19 @@ def get_fund_list(page_index):
                 # 晨星基金专属晨星码
                 morning_star_code_list.append(current_morning_code)
                 name_list.append(tds_text[1].find_all('a')[0].string)
+                # print("name_list", name_list)
                 # 基金分类
                 fund_cat.append(tds_text[2].string)
                 # 三年评级
-                rating = get_star_count(tds_text[3].find_all('img')[0]['src'])
+                # rating = None
+                rating_3_img_ele = tds_text[3].find_all('img')[0]
+                rating_3_src = rating_3_img_ele['src']
+                rating = get_star_count(rating_3_src, current_morning_code, rating_3_img_ele)
                 fund_rating_3.append(rating)
                 # 5年评级
-                rating = get_star_count(tds_text[4].find_all('img')[0]['src'])
+                rating_5_img_ele = tds_text[4].find_all('img')[0]
+                rating_5_src = rating_5_img_ele['src']
+                rating = get_star_count(rating_5_src, current_morning_code, rating_5_img_ele)
                 fund_rating_5.append(rating)
                 # 今年以来回报(%)
                 return_value = tds_nume[3].string if tds_nume[3].string != '-' else None

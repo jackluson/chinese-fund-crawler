@@ -9,5 +9,6 @@ Copyright (c) 2022 Camel Lu
 '''
 
 print('--models init--');
-
-import fund
+import sys
+sys.path.append('./src')
+import models.fund

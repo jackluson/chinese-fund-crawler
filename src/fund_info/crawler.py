@@ -9,8 +9,8 @@ Copyright (c) 2020 Camel Lu
 '''
 
 import re
-from time import sleep
-from bs4 import BeautifulSoup
+from datetime import datetime, timedelta, date
+from time import sleep, time
 from utils.index import get_star_count, get_quarter_index, get_last_quarter_str
 from selenium.common.exceptions import NoSuchElementException
 
@@ -51,6 +51,8 @@ class FundSpider:
         # 十大持仓信息
         self.ten_top_stock_list = []  # 股票十大持仓股信息
 
+    def set_found_data(self, date):
+        self.found_date = date
     # 处理基金详情页跳转
     def go_fund_url(self, cookie_str=None):
         # self.login_morning_star(cookie_str)
@@ -156,10 +158,8 @@ class FundSpider:
                 manager['manager_id'] = manager_id
                 manager['manager_start_date'] = manager_ele.find_element_by_xpath(
                     "li[@class='col1']/i").text[0:10]
-                
                 manager['brife'] = manager_ele.find_element_by_xpath(
                     "li[@class='col2']").text
-                
                 self.manager_list.append(manager)
 
             except NoSuchElementException:
@@ -173,18 +173,42 @@ class FundSpider:
     def get_fund_morning_rating(self):
         try:
             qt_el = self._chrome_driver.find_element_by_id('qt_star')
-            rating_3_src = qt_el.find_element_by_xpath(
-                "//li[@class='star3']/img").get_attribute('src')
-            rating_5_src = qt_el.find_element_by_xpath(
-                "//li[@class='star5']/img").get_attribute('src')
-            rating_10_src = qt_el.find_element_by_xpath(
-                "//li[@class='star10']/img").get_attribute('src')
-            rating_3 = get_star_count(rating_3_src)
-            rating_5 = get_star_count(rating_5_src)
-            rating_10 = get_star_count(rating_10_src)
-            self.morning_star_rating[3] = rating_3
-            self.morning_star_rating[5] = rating_5
-            self.morning_star_rating[10] = rating_10
+            rating_3_img_ele = qt_el.find_element_by_xpath(
+                "//li[@class='star3']/img")
+            rating_3_src = rating_3_img_ele.get_attribute('src')
+            rating_5_img_ele = qt_el.find_element_by_xpath(
+                "//li[@class='star5']/img")
+            rating_5_src = rating_5_img_ele.get_attribute('src')
+            rating_10_img_ele = qt_el.find_element_by_xpath(
+                "//li[@class='star10']/img")
+            rating_10_src = rating_10_img_ele.get_attribute('src')
+
+            delta = timedelta(days=3 * 365)
+            date_now = date.today()
+            is_more = False
+            
+            if date_now - delta > self.found_date:
+                is_more = True
+                rating_3 = get_star_count(rating_3_src,  self.fund_code, rating_3_img_ele)
+                self.morning_star_rating[3] = rating_3
+            if is_more == False:
+                return
+
+            delta = timedelta(days=5 * 365)
+            is_more = False
+            if date_now - delta > self.found_date:
+                is_more = True
+                rating_5 = get_star_count(rating_5_src,  self.fund_code, rating_5_img_ele)
+                self.morning_star_rating[5] = rating_5
+
+            if is_more == False:
+                return
+            delta = timedelta(days=10 * 365)
+            if date_now - delta > self.found_date:
+                rating_10 = get_star_count(rating_10_src,  self.fund_code, rating_10_img_ele)
+                self.morning_star_rating[10] = rating_10
+
+
         except NoSuchElementException:
             self._is_trigger_catch = True
             print('error_fund_info:', self.fund_code,
@@ -225,8 +249,9 @@ class FundSpider:
 
     def get_fund_season_info(self):
         # 总资产  TODO: 增加一个数据更新时间field
-        self.total_asset = self.get_element_text_by_class_name(
+        total_asset = self.get_element_text_by_class_name(
             "asset", 'qt_base')
+        self.total_asset = float(total_asset) if total_asset else 0
         # 投资风格
         self.investname_style = self.get_element_text_by_class_name(
             'sbdesc', 'qt_base')

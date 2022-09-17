@@ -10,7 +10,7 @@ Copyright (c) 2020 Camel Lu
 '''
 
 from threading import Lock, current_thread
-from time import sleep
+from time import sleep, time
 from pprint import pprint
 from fund_info.crawler import FundSpider
 from fund_info.api import FundApier
@@ -39,8 +39,7 @@ def get_total_asset(fund_code, platform):
 def acquire_fund_quarter():
     lock = Lock()
     each_fund_query = FundQuery()
-    record_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
-    print('record_total', record_total)
+    
     idWorker = IdWorker()
     result_dir = './output/'
     fund_csv = FundCSV(result_dir)
@@ -52,153 +51,199 @@ def acquire_fund_quarter():
         chrome_driver = login_morning_star(login_url, False)
         page_start = start
         page_limit = 10
-        while(page_start < end):
-            results = each_fund_query.select_quarter_fund(
-                page_start, page_limit)
-            for record in results:
-                sleep(1)
-                # 0P000179WG
-                # 001811 中欧明睿新常态混合A
-                each_fund = FundSpider(
-                    record[0], record[1], record[2], chrome_driver)
-                is_error_page = each_fund.go_fund_url()
-                # 是否能正常跳转到基金详情页，没有的话，写入csv,退出当前循环
-                if is_error_page == True:
-                    # error_funds.append(each_fund.fund_code)
-                    fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
-                                  each_fund.fund_name, record[3], page_start, '页面跳转有问题']
-                    output_line = ', '.join(str(x)
-                                            for x in fund_infos) + '\n'
-                    fund_csv.write_abnormal_url_fund(False, output_line)
-
-                    continue
-                # 开始爬取数据
-                quarter_index = each_fund.get_quarter_index()  # 数据更新时间,如果不一致，不爬取下面数据
-                if quarter_index != each_fund.quarter_index:
-                    print('quarter_index', quarter_index, each_fund.update_date,
-                          each_fund.fund_code, each_fund.fund_name)
-                    continue
-
-                each_fund.get_fund_season_info()  # 基本季度性数据
-                each_fund.get_fund_manager_info()  # 基金经理模块
-                each_fund.get_fund_morning_rating()  # 基金晨星评级
-                each_fund.get_fund_qt_rating()  # 基金风险评级
-                # 判断是否有股票持仓，有则爬取
-                if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
-                    each_fund.get_asset_composition_info()
-                # 爬取过程中是否有异常,有的话，存在csv中
-                if each_fund._is_trigger_catch == True:
-                    fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
-                                  each_fund.fund_name, record[3],
-                                  each_fund.stock_position['total'],
-                                  page_start, each_fund._catch_detail]
-                    output_line = ', '.join(str(x)
-                                            for x in fund_infos) + '\n'
-                    fund_csv.write_season_catch_fund(False, output_line)
-                # 入库
-                lock.acquire()
-                snow_flake_id = idWorker.get_id()
-                lock.release()
-                # 开始存入数据
-                fund_insert = FundInsert()
-                # 基金经理
-                first_manager_id = None
-                first_manager_start_date = None
-                for manager_item in each_fund.manager_list:
-                    manager = Manager(**manager_item)
-                    manager.upsert()
-                    if first_manager_id == None:
-                        first_manager_id = manager_item['manager_id']
-                    if first_manager_start_date == None:
-                        first_manager_start_date = manager_item['manager_start_date']
+        try:
+            while(page_start < end):
+                results = each_fund_query.select_quarter_fund(
+                    page_start, page_limit)
+                for record in results:
+                    sleep(1)
+                    # 0P000179WG
+                    # 001811 中欧明睿新常态混合A
+                    each_fund = FundSpider(
+                        record[0], record[1], record[2], chrome_driver)
                     
-                    manager_assoc_data = {
-                        'quarter_index': quarter_index,
-                        'manager_start_date': manager_item['manager_start_date'],
-                        'manager_id': manager_item['manager_id'],
-                        'fund_code': each_fund.fund_code
-                    }
-                    manager_assoc = ManagerAssoc(**manager_assoc_data)
-                    manager_assoc.upsert()
-                    # fund_insert.insert_fund_manger_info(manager_dict)
-                quarterly_dict = {
-                    'id': snow_flake_id,
-                    'quarter_index': each_fund.quarter_index,
-                    'fund_code': each_fund.fund_code,
-                    'investname_style': each_fund.investname_style,
-                    'total_asset': each_fund.total_asset,
-                    'manager_id': first_manager_id, # 暂时存第一个基金经理信息
-                    'manager_start_date': first_manager_start_date,  # 暂时存第一个基金经理信息
-                    'three_month_retracement': each_fund.three_month_retracement,
-                    'june_month_retracement': each_fund.june_month_retracement,
-                    'risk_statistics_alpha': each_fund.risk_statistics.get('alpha'),
-                    'risk_statistics_beta': each_fund.risk_statistics.get('beta'),
-                    'risk_statistics_r_square': each_fund.risk_statistics.get('r_square'),
-                    'risk_assessment_standard_deviation': each_fund.risk_assessment.get('standard_deviation'),
-                    'risk_assessment_risk_coefficient': each_fund.risk_assessment.get('risk_coefficient'),
-                    'risk_assessment_sharpby': each_fund.risk_assessment.get('sharpby'),
-                    'risk_rating_2': each_fund.risk_rating.get(2),
-                    'risk_rating_3': each_fund.risk_rating.get(3),
-                    'risk_rating_5': each_fund.risk_rating.get(5),
-                    'risk_rating_10': each_fund.risk_rating.get(10),
-                    'stock_position_total': each_fund.stock_position.get('total'),
-                    'stock_position_ten': each_fund.stock_position.get('ten'),
-                    'bond_position_total': each_fund.bond_position.get('total'),
-                    'bond_position_five': each_fund.bond_position.get('five'),
-                    'morning_star_rating_3': each_fund.morning_star_rating.get(3),
-                    'morning_star_rating_5': each_fund.morning_star_rating.get(5),
-                    'morning_star_rating_10': each_fund.morning_star_rating.get(10),
-                }
-                fund_insert.fund_quarterly_info(quarterly_dict)
-                # 入库十大股票持仓
-                stock_position_total = each_fund.stock_position.get(
-                    'total', '0.00')
-                if float(stock_position_total) > 0:
-                    stock_dict = {
-                        'id': snow_flake_id,
+                    each_fund.set_found_data(record[3])
+                    is_error_page = each_fund.go_fund_url()
+                    # 是否能正常跳转到基金详情页，没有的话，写入csv,退出当前循环
+                    if is_error_page == True:
+                        # error_funds.append(each_fund.fund_code)
+                        fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
+                                    each_fund.fund_name, record[3], page_start, '页面跳转有问题']
+                        output_line = ', '.join(str(x)
+                                                for x in fund_infos) + '\n'
+                        fund_csv.write_abnormal_url_fund(False, output_line)
+
+                        continue
+                    # 开始爬取数据
+                    quarter_index = each_fund.get_quarter_index()  # 数据更新时间,如果不一致，不爬取下面数据
+                    if quarter_index != each_fund.quarter_index:
+                        print('quarter_index', quarter_index, each_fund.update_date,
+                            each_fund.fund_code, each_fund.fund_name)
+                        continue
+
+                    each_fund.get_fund_season_info()  # 基本季度性数据
+                    each_fund.get_fund_manager_info()  # 基金经理模块
+                    each_fund.get_fund_morning_rating()  # 基金晨星评级
+                    each_fund.get_fund_qt_rating()  # 基金风险评级
+                    # 判断是否有股票持仓，有则爬取
+                    if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
+                        each_fund.get_asset_composition_info()
+                    # 爬取过程中是否有异常,有的话，存在csv中
+                    if each_fund._is_trigger_catch == True:
+                        fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
+                                    each_fund.fund_name, record[3],
+                                    each_fund.stock_position['total'],
+                                    page_start, each_fund._catch_detail]
+                        output_line = ', '.join(str(x)
+                                                for x in fund_infos) + '\n'
+                        fund_csv.write_season_catch_fund(False, output_line)
+                    # 入库
+                    lock.acquire()
+                    snow_flake_id = idWorker.get_id()
+                    lock.release()
+                    # 开始存入数据
+                    fund_insert = FundInsert()
+                    # 基金经理
+                    first_manager_id = None
+                    first_manager_start_date = None
+                    for manager_item in each_fund.manager_list:
+                        manager = Manager(**manager_item)
+                        manager.upsert()
+                        if first_manager_id == None:
+                            first_manager_id = manager_item['manager_id']
+                        if first_manager_start_date == None:
+                            first_manager_start_date = manager_item['manager_start_date']
+                        manager_assoc_data = {
+                            'quarter_index': quarter_index,
+                            'manager_start_date': manager_item['manager_start_date'],
+                            'manager_id': manager_item['manager_id'],
+                            'fund_code': each_fund.fund_code
+                        }
+                        manager_assoc = ManagerAssoc(**manager_assoc_data)
+                        manager_assoc.upsert()
+                        # fund_insert.insert_fund_manger_info(manager_dict)
+                    init_total_asset = each_fund.total_asset
+                    quarterly_dict = {
+                        # 'id': snow_flake_id,
                         'quarter_index': each_fund.quarter_index,
                         'fund_code': each_fund.fund_code,
+                        'investname_style': each_fund.investname_style,
+                        # 'total_asset': each_fund.total_asset,
+                        'manager_id': first_manager_id, # 暂时存第一个基金经理信息
+                        'manager_start_date': first_manager_start_date,  # 暂时存第一个基金经理信息
+                        'three_month_retracement': each_fund.three_month_retracement,
+                        'june_month_retracement': each_fund.june_month_retracement,
+                        'risk_statistics_alpha': each_fund.risk_statistics.get('alpha'),
+                        'risk_statistics_beta': each_fund.risk_statistics.get('beta'),
+                        'risk_statistics_r_square': each_fund.risk_statistics.get('r_square'),
+                        'risk_assessment_standard_deviation': each_fund.risk_assessment.get('standard_deviation'),
+                        'risk_assessment_risk_coefficient': each_fund.risk_assessment.get('risk_coefficient'),
+                        'risk_assessment_sharpby': each_fund.risk_assessment.get('sharpby'),
+                        'risk_rating_2': each_fund.risk_rating.get(2),
+                        'risk_rating_3': each_fund.risk_rating.get(3),
+                        'risk_rating_5': each_fund.risk_rating.get(5),
+                        'risk_rating_10': each_fund.risk_rating.get(10),
                         'stock_position_total': each_fund.stock_position.get('total'),
+                        'stock_position_ten': each_fund.stock_position.get('ten'),
+                        'bond_position_total': each_fund.bond_position.get('total'),
+                        'bond_position_five': each_fund.bond_position.get('five'),
+                        'morning_star_rating_3': each_fund.morning_star_rating.get(3),
+                        'morning_star_rating_5': each_fund.morning_star_rating.get(5),
+                        'morning_star_rating_10': each_fund.morning_star_rating.get(10),
                     }
-                    for index in range(len(each_fund.ten_top_stock_list)):
-                        temp_stock = each_fund.ten_top_stock_list[index]
-                        prefix = 'top_stock_' + str(index) + '_'
-                        code_key = prefix + 'code'
-                        stock_dict[code_key] = temp_stock['stock_code']
-                        name_key = prefix + 'name'
-                        stock_dict[name_key] = temp_stock['stock_name']
-                        portion_key = prefix + 'portion'
-                        stock_dict[portion_key] = temp_stock['stock_portion']
-                        market_key = prefix + 'market'
-                        stock_dict[market_key] = temp_stock['stock_market']
-                    fund_insert.fund_stock_info(stock_dict)
-                # 获取同类基金，再获取同类基金的总资产
-                if each_fund.fund_name.endswith('A'):
-                    similar_name = each_fund.fund_name[0:-1]
-                    results = each_fund_query.select_similar_fund(
-                        similar_name)    # 获取查询的所有记录
-                    platform = 'zh_fund' if '封闭' in similar_name else 'ai_fund'
-                    for i in range(0, len(results)):
-                        item = results[i]
-                        item_code = item[0]
-                        total_asset = get_total_asset(item_code, platform)
-                        quarterly_dict['fund_code'] = item_code
-                        quarterly_dict['total_asset'] = total_asset
-                        quarterly_dict['id'] = snow_flake_id + i + 1
-                        # 入库
-                        fund_insert.fund_quarterly_info(quarterly_dict)
-                        if float(stock_position_total) > 0:
-                            stock_dict['fund_code'] = item_code
-                            stock_dict['id'] = snow_flake_id + i + 1
+                    
+                    # 入库十大股票持仓
+                    stock_position_total = each_fund.stock_position.get(
+                        'total', '0.00')
+                    if float(stock_position_total) > 0:
+                        stock_dict = {
+                            'id': snow_flake_id,
+                            'quarter_index': each_fund.quarter_index,
+                            'fund_code': each_fund.fund_code,
+                            'stock_position_total': each_fund.stock_position.get('total'),
+                        }
+                        for index in range(len(each_fund.ten_top_stock_list)):
+                            temp_stock = each_fund.ten_top_stock_list[index]
+                            prefix = 'top_stock_' + str(index) + '_'
+                            code_key = prefix + 'code'
+                            stock_dict[code_key] = temp_stock['stock_code']
+                            name_key = prefix + 'name'
+                            stock_dict[name_key] = temp_stock['stock_name']
+                            portion_key = prefix + 'portion'
+                            stock_dict[portion_key] = temp_stock['stock_portion']
+                            market_key = prefix + 'market'
+                            stock_dict[market_key] = temp_stock['stock_market']
+                        
+                    # 获取同类基金，再获取同类基金的总资产
+                    if each_fund.fund_name.endswith('A') or each_fund.fund_name.endswith('B') or each_fund.fund_name.endswith('C'):
+                        similar_name = each_fund.fund_name[0:-1]
+                        results = each_fund_query.select_similar_fund(
+                            similar_name)    # 获取查询的所有记录
+                        platform = 'zh_fund' if '封闭' in similar_name else 'ai_fund'
+                        for i in range(0, len(results)):
+                            item = results[i]
+                            item_code = item[0]
+                            if item_code == each_fund.fund_code:
+                                continue
+                            print("item_code", item_code, platform )
+                            total_asset = get_total_asset(item_code, platform)
+                            init_total_asset = init_total_asset - total_asset
+                            manager_assoc_data = {
+                                'quarter_index': quarter_index,
+                                'manager_start_date': manager_item['manager_start_date'],
+                                'manager_id': manager_item['manager_id'],
+                                'fund_code': item_code
+                            }
+                            manager_assoc = ManagerAssoc(**manager_assoc_data)
+                            manager_assoc.upsert()
+                            quarterly_dict['fund_code'] = item_code
+                            quarterly_dict['total_asset'] = total_asset
+                            quarterly_dict['id'] = snow_flake_id + i + 1
                             # 入库
-                            fund_insert.fund_stock_info(stock_dict)
-                # pprint(fundDict)
-            page_start = page_start + page_limit
-            print(current_thread().getName(), 'page_start', page_start)
-            sleep(3)
+                            fund_insert.fund_quarterly_info(quarterly_dict)
+                            if float(stock_position_total) > 0:
+                                stock_dict['fund_code'] = item_code
+                                stock_dict['id'] = snow_flake_id + i + 1
+                                # 入库
+                                fund_insert.fund_stock_info(stock_dict)
+                    quarterly_dict['fund_code'] = each_fund.fund_code
+                    quarterly_dict['total_asset'] = init_total_asset
+                    quarterly_dict['id'] = snow_flake_id
+                    fund_insert.fund_quarterly_info(quarterly_dict)
+                    if float(stock_position_total) > 0:
+                        stock_dict['fund_code'] = each_fund.fund_code
+                        stock_dict['id'] = snow_flake_id
+                        fund_insert.fund_stock_info(stock_dict)
+                    # pprint(fundDict)
+                page_start = page_start + page_limit
+                print(current_thread().getName(), 'page_start', page_start)
+                sleep(3)
+        except(BaseException):
+            chrome_driver.close()
+            raise BaseException
         chrome_driver.close()
-    thread_count = 1
-    bootstrap_thread(crawlData, record_total, thread_count)
+    thread_count = 4
+
+    # for count in range(6):
+    total_start_time = time()
+    # record_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
+    # print("record_total", record_total)
+    # bootstrap_thread(crawlData, record_total, thread_count)
+
+    for i in range(3):
+        print("i", i)
+        start_time = time()
+        record_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
+        print('record_total', record_total)
+        try:
+            bootstrap_thread(crawlData, record_total, thread_count)
+        except:
+            end_time = time()
+            print("耗时: {:.2f}秒".format(end_time - start_time))
+        end_time = time()
+        print("耗时: {:.2f}秒".format(end_time - start_time))
+    total_end_time = time()
+    print("total耗时: {:.2f}秒".format(total_end_time - total_start_time))
     exit()
 
 if __name__ == '__main__':

@@ -14,7 +14,7 @@ sys.path.append('./src')
 from sqlalchemy.orm import Session
 from models.manager import Manager, ManagerAssoc
 from models.quarter import Quarter
-from models.var import prefix, ORM_Base, engine
+from models.var import engine
 
 session = Session(engine)
 

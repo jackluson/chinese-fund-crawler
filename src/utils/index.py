@@ -2,14 +2,41 @@
 import time
 import datetime
 import os
-
+import numpy as np
+import requests
+from PIL import Image
+from skimage import io
+from sewar.full_ref import uqi, sam
 import re
 from threading import Thread, Lock
 
 import pandas as pd
 from openpyxl import load_workbook
 
+requests.adapters.DEFAULT_RETRIES = 10 # 增加重连次数
+s = requests.session()
+s.keep_alive = False # 关闭多余连接
 
+dir = os.getcwd() + '/src/'
+
+img_dir = dir + 'img/'
+samples_dir = dir + 'assets/samples/'
+
+def use_sewar_get_star_level(img_path):
+    sample_imgs = os.listdir(samples_dir)
+    img1 = io.imread(fname=img_path)
+    for filename in sample_imgs:
+        level = filename[-5:-4]
+        img_path_2 = samples_dir + filename
+        img2 = io.imread(fname=img_path_2)
+        res_uqi = uqi(img1, img2)
+        res_sam = sam(img1, img2)
+
+        if res_uqi > 0.98 and res_sam < 0.11:
+            # res_level = level2
+            return level
+    print('img_path', img_path)
+    raise "img_path 图片比较失败"
 def lock_process(func):
     lock = Lock()
 
@@ -28,27 +55,57 @@ def debug(func):
     return wrapper  # 返回包装过函数
 
 
-def get_star_count(morning_star_url):
-    import numpy as np
-    import requests
-    from PIL import Image
+def get_star_count_with_sewar(fund_code, img_ele):
+    picture_time = time.strftime(
+        "%Y-%m-%d-%H_%M_%S", time.localtime(time.time()))
+    directory_time = time.strftime("%Y-%m-%d", time.localtime(time.time()))
+    file_dir = os.getcwd() + '/star-record/' + directory_time + '/'
+    try:
+        if not os.path.exists(file_dir):
+            os.makedirs(file_dir)
+            print("目录新建成功：%s" % file_dir)
+    except BaseException as msg:
+        print("新建目录失败：%s" % msg)
+    
+    code_path = './star-record/' + directory_time + '/' + picture_time + '_' + fund_code + '_' + '_code.png'
+    is_success = img_ele.screenshot(code_path)
+    time.sleep(2)
+    if is_success:
+        return use_sewar_get_star_level(code_path)
+    else:
+        raise "截图失败"
+    
+
+def get_star_count_with_np(morning_star_url):
     module_path = os.getcwd() + '/src'
     temp_star_url = module_path + '/assets/star/tmp.gif'
-    r = requests.get(morning_star_url)
+    try:
+        r = requests.get(morning_star_url)
+    except BaseException:
+        raise BaseException('请求失败')
     with open(temp_star_url, "wb") as f:
         f.write(r.content)
     f.close()
     path = module_path + '/assets/star/star'
 
-    # path = './assets/star/star'
     try:
         for i in range(6):
             p1 = np.array(Image.open(path + str(i) + '.gif'))
             p2 = np.array(Image.open(temp_star_url))
             if (p1 == p2).all():
                 return i
-    except:
-        print('morning_star_url', morning_star_url)
+    except BaseException:
+        raise BaseException('识别失败')
+
+def get_star_count(morning_star_url, fund_code, img_ele=None):
+    # path = './assets/star/star'
+    try:
+        return get_star_count_with_sewar(fund_code, img_ele)
+    except BaseException:
+        print("BaseException", BaseException)
+        print('图片相似度比较失败')
+    return get_star_count_with_np(morning_star_url)
+    
 
 
 def parse_csv(datafile):

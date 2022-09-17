@@ -19,7 +19,7 @@ ORM_Base = get_orm_base()
 
 prefix = 'fund_morning_'
 
-engine = get_engine(echo=True)
+engine = get_engine(echo=False)
 
 # class ORM_Base(Base):
 #     def __init__(self, **kwargs) -> None:

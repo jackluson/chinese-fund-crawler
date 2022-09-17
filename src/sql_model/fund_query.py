@@ -82,10 +82,8 @@ class FundQuery(BaseQuery):
         '普通债券型', '普通债券型(封闭)', '普通债券', '普通债券(封闭)', '普通债券型基金','普通债券型基金(封闭)', '信用债', '信用债(封闭)','目标日期', '商品 - 贵金属',  '商品 - 其它' ) \
         AND t.found_date <= %s \
         AND t.is_archive = 0 \
-        AND t.fund_name NOT LIKE '%%C' \
-        AND t.fund_name NOT LIKE '%%B' \
         AND t.fund_code	NOT IN( SELECT fund_code FROM fund_morning_quarter as b \
-        WHERE b.quarter_index = %s AND b.stock_position_total != 0)"
+        WHERE b.quarter_index = %s)"
         return condition
 
     # 筛选出要更新的基金季度性信息的基金(B,C类基金除外，因为B、C基金大部分信息与A类一致)的总数
@@ -100,8 +98,9 @@ class FundQuery(BaseQuery):
     @lock_process
     def select_quarter_fund(self, page_start, page_limit):
         sql = "SELECT t.fund_code,\
-            t.morning_star_code, t.fund_name, t.fund_cat \
+            t.morning_star_code, t.fund_name, t.found_date, t.fund_cat \
             FROM fund_morning_base as t " + self.get_select_quarter_condition() + " LIMIT %s, %s;"
+
         self.cursor.execute(
             sql, [self.quarter_date, self.quarter_index, page_start, page_limit])    # 执行sql语句
         return self.cursor.fetchall()    # 获取查询的所有记录
@@ -225,8 +224,9 @@ class FundQuery(BaseQuery):
                 t.morning_star_code, t.fund_name \
                 FROM fund_morning_base as t \
                 LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
-                WHERE t.fund_name LIKE %s \
-                AND t.fund_name NOT LIKE '%%A';"
+                WHERE t.fund_name LIKE %s;"
+                    
+                # AND t.fund_name NOT LIKE '%%A';"
         self.cursor.execute(sql_similar, [similar_name + '%'])
         results = self.cursor.fetchall()    # 获取查询的所有记录
         return results

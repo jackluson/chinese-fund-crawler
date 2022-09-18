@@ -197,7 +197,7 @@ def get_stock_market(stock_code):
         return '其他'
 
 
-def update_xlsx_file(path, df_data, sheet_name):
+def update_xlsx_file(path, df_data, sheet_name, sorted_worksheets = []):
     try:
         if os.path.exists(path):
             writer = pd.ExcelWriter(path, engine='openpyxl')
@@ -211,16 +211,43 @@ def update_xlsx_file(path, df_data, sheet_name):
                 return
             else:
                 writer.book = book
-                df_data.to_excel(
+            df_data.to_excel(
                     writer, sheet_name=sheet_name)
+
             writer.save()
             writer.close()
         else:
             df_data.to_excel(
                 path, sheet_name=sheet_name)
-    except:
+    except BaseException:
         print("path", path)
-    
+        raise BaseException('更新excel失败')
+
+
+def update_xlsx_file_with_sorted(path, df_data, sheet_name, sorted_sheetnames = []):
+    try:
+        if os.path.exists(path):
+            writer = pd.ExcelWriter(path, engine='openpyxl')
+            workbook = load_workbook(path)
+            writer.book = workbook
+            writer.sheets = {ws.title:ws for ws in workbook.worksheets}
+            for sheet_item in sorted_sheetnames:
+                del workbook[sheet_item]
+            df_data.to_excel(
+                    writer,  sheet_name=sheet_name)
+            workbook = writer.book
+            for worksheet in sorted_sheetnames:
+                workbook._add_sheet(writer.sheets.get(worksheet))
+            writer.book = workbook
+
+            writer.save()
+            writer.close()
+        else:
+            df_data.to_excel(
+                path, sheet_name=sheet_name)
+    except BaseException:
+        print("path", path)
+        raise BaseException('更新excel失败')
 
 
 def bootstrap_thread(target_fn, total, thread_count=2):

@@ -12,3 +12,4 @@ cryptography==37.0.4
 lxml==4.9.1
 scikit-image==0.19.3
 sewar==0.4.5
+xlsxwriter==3.0.3

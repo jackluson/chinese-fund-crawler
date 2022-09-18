@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 code-record/*
+star-record/*
 !.gitkeep
 *.py[cod]
 *$py.class

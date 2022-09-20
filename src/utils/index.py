@@ -249,6 +249,29 @@ def update_xlsx_file_with_sorted(path, df_data, sheet_name, sorted_sheetnames = 
         print("path", path)
         raise BaseException('更新excel失败')
 
+def update_xlsx_file_with_insert(path, df_data, sheet_name, index = 0):
+    try:
+        if os.path.exists(path):
+            writer = pd.ExcelWriter(path, engine='openpyxl')
+            workbook = load_workbook(path)
+            writer.book = workbook
+            df_data.to_excel(
+                    writer,  sheet_name=sheet_name)
+            workbook = writer.book
+            writer.sheets = {ws.title:ws for ws in workbook.worksheets}
+            del workbook[sheet_name]
+            # workbook.remove(sheet_name)
+            workbook._add_sheet(writer.sheets.get(sheet_name), index)
+            writer.book = workbook
+
+            writer.save()
+            writer.close()
+        else:
+            df_data.to_excel(
+                path, sheet_name=sheet_name)
+    except BaseException:
+        print("path", path)
+        raise BaseException('更新excel失败')
 
 def bootstrap_thread(target_fn, total, thread_count=2):
     threaders = []

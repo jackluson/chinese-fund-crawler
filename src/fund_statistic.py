@@ -16,7 +16,7 @@ from pprint import pprint
 import pandas as pd
 import numpy as np
 from fund_info.statistic import FundStatistic
-from utils.index import get_last_quarter_str, get_stock_market, find_from_list_of_dict, update_xlsx_file, update_xlsx_file_with_sorted
+from utils.index import get_last_quarter_str, get_stock_market, find_from_list_of_dict, update_xlsx_file, update_xlsx_file_with_sorted, update_xlsx_file_with_insert
 from utils.file_op import read_dir_all_file
 
 
@@ -150,8 +150,8 @@ def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
     if quarter_index == None:
         quarter_index = get_last_quarter_str(1)
     last_quarter_index = get_last_quarter_str(2)
-    output_file = './outcome/数据整理/strategy/top100_rank.xlsx'
-    sheet_name = quarter_index + '基金重仓股T100'
+    output_file = './outcome/数据整理/strategy/基金重仓股Top100.xlsx'
+    sheet_name = quarter_index
     columns = ['代码', '名称', quarter_index + '持有数量（只）', last_quarter_index + '持有数量（只）', '持有数量环比', '持有数量环比百分比',
                '持有数量升或降',  quarter_index + '持有市值（亿元）', last_quarter_index + '持有市值（亿元）', '持有市值环比', '持有市值环比百分比', '持有市值升或降']
 
@@ -161,7 +161,7 @@ def t100_stocks_rank(each_statistic=None, *, quarter_index=None):
     stock_top_list = stock_top_list[:100]  # 获取top100权重股
     filter_list = stocks_compare(stock_top_list)
     df_filter_list = pd.DataFrame(filter_list, columns=columns)
-    update_xlsx_file(output_file, df_filter_list, sheet_name)
+    update_xlsx_file_with_insert(output_file, df_filter_list, sheet_name)
     # df_filter_list.to_excel(output_file, sheet_name=sheet_name)
 
 
@@ -414,7 +414,7 @@ def compare(item1, item2):
 
 # Calling
 # list.sort(key=compare)
-def calculate_quarter_fund_count():
+def calculate_quarter_fund_total():
     stock_markets = ['A股/上证主板', 'A股/创业板', 'A股/科创板', 'A股/深证主板', 'A股/北交所', '港股', '其他']
     for market in stock_markets:
         dir_path = './outcome/数据整理/stocks/' + market + '/'
@@ -459,5 +459,5 @@ if __name__ == '__main__':
     # 获取某些基金的十大持仓股票信息
     # get_special_fund_code_holder_stock_detail()
 
-    calculate_quarter_fund_count()
+    calculate_quarter_fund_total()
     # select_condition_stocks_rank()

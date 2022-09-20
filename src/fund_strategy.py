@@ -8,7 +8,7 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2021 Camel Lu
 '''
 
-from utils.index import get_last_quarter_str, update_xlsx_file
+from utils.index import get_last_quarter_str, update_xlsx_file_with_insert
 from sql_model.fund_query import FundQuery
 from pprint import pprint
 import pandas as pd
@@ -34,7 +34,7 @@ def output_high_score_funds(each_query=None, quarter_index=None):
     # pprint(df_high_score_funds)
 
     path = './outcome/数据整理/funds/high-score-funds.xlsx'
-    update_xlsx_file(path, df_high_score_funds, quarter_index)
+    update_xlsx_file_with_insert(path, df_high_score_funds, quarter_index)
 
 
 if __name__ == '__main__':

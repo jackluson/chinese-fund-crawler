@@ -17,7 +17,7 @@ from src.acquire_fund_snapshot import get_fund_list
 from src.acquire_fund_base import acquire_fund_base
 from src.fund_info.supplement import FundSupplement
 from src.acquire_fund_quarter import acquire_fund_quarter
-from src.fund_statistic import get_special_fund_code_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail,calculate_quarter_fund_count
+from src.fund_statistic import get_special_fund_code_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail,calculate_quarter_fund_total
 from src.fund_strategy import output_high_score_funds
 
 def main():
@@ -53,7 +53,7 @@ def main():
     elif input_value == '8':
         all_stock_holder_detail()
     elif input_value == '9':
-        calculate_quarter_fund_count()
+        calculate_quarter_fund_total()
     elif input_value == '10':
         output_high_score_funds()
     else:

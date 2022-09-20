@@ -7,14 +7,15 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
-from sql_model.stock_query import StockQuery
-from sql_model.fund_query import FundQuery
-from utils.index import get_quarter_index, fisrt_match_condition_from_list
 import time
 import re
 import os
 import sys
 from pprint import pprint
+
+from sql_model.stock_query import StockQuery
+from sql_model.fund_query import FundQuery
+from utils.index import get_quarter_index, fisrt_match_condition_from_list
 sys.path.append('../')
 sys.path.append(os.getcwd() + '/src')
 

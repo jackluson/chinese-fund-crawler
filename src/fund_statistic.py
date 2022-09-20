@@ -398,7 +398,7 @@ def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index
     df_a_list = pd.DataFrame(holder_stock_industry_list, columns=columns)
     # print("df_a_list", df_a_list)
 
-    update_xlsx_file(path, df_a_list, sheet_name='十大持仓明细--' + quarter_index)
+    update_xlsx_file_with_insert(path, df_a_list, sheet_name=quarter_index)
 
 def compare(item1, item2):
     year1 = int(item1[0:4])

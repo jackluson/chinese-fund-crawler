@@ -105,46 +105,6 @@ class FundQuery(BaseQuery):
             sql, [self.quarter_date, self.quarter_index, page_start, page_limit])    # 执行sql语句
         return self.cursor.fetchall()    # 获取查询的所有记录
 
-    def select_high_score_funds(self, *, quarter_index=None):
-        """获取高分基金池
-
-        Args:
-            quarter_index (string, optional): 查询季度. Defaults to None.
-
-        Returns:
-            []tuple: 高分基金池
-        """
-        last_year_time = time.localtime(time.time() - 365 * 24 * 3600)
-        last_year_date = time.strftime('%Y-%m-%d', last_year_time)
-
-        if quarter_index == None:
-            quarter_index = self.quarter_index
-        sql = "SELECT a.fund_code, b.fund_name, a.investname_style, c.name, a.manager_start_date, b.found_date, a.morning_star_rating_3, \
-           a.morning_star_rating_5, a.risk_assessment_sharpby, a.stock_position_total, a.stock_position_ten,\
-              a.risk_rating_2, a.risk_rating_3, a.risk_rating_5,\
-            a.risk_statistics_alpha, a.risk_statistics_beta, a.risk_assessment_standard_deviation,\
-            a.total_asset, a.quarter_index FROM fund_morning_quarter as a \
-            LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
-              LEFT JOIN fund_morning_manager AS c ON c.manager_id = a.manager_id \
-            WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%E' AND b.fund_name NOT LIKE '%%H%%' AND b.fund_name NOT LIKE '%%指数%%'  \
-            AND a.quarter_index = %s AND a.total_asset < 100 AND \
-            a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
-            AND a.risk_assessment_sharpby > 1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s \
-            ORDER BY a.risk_assessment_sharpby DESC, a.risk_statistics_alpha DESC;"
-        sql_bk = "SELECT a.fund_code, b.fund_name, a.quarter_index, a.total_asset , a.manager_start_date, \
-                    a.investname_style, a.three_month_retracement, a.june_month_retracement, a.risk_assessment_sharpby,\
-                    a.risk_statistics_alpha, a.risk_statistics_beta, a.risk_statistics_r_square, a.risk_assessment_standard_deviation,\
-                    a.risk_assessment_risk_coefficient, a.risk_rating_2, a.risk_rating_3, a.risk_rating_5, a.morning_star_rating_5,\
-                    a.morning_star_rating_3, a.stock_position_total, a.stock_position_ten FROM fund_morning_quarter as a \
-                    LEFT JOIN fund_morning_base AS b ON a.fund_code = b.fund_code \
-                    WHERE b.fund_name NOT LIKE '%%C' AND b.fund_name NOT LIKE '%%H' AND b.fund_name NOT LIKE '%%E'  AND a.quarter_index = %s AND \
-                    a.morning_star_rating_5 >= 3 AND a.morning_star_rating_3 = 5 AND a.stock_position_total >= 50 AND a.stock_position_ten <= 60 \
-                    AND a.risk_assessment_sharpby >1 AND a.risk_rating_2 > 1 AND a.risk_rating_3 > 1 AND a.risk_rating_5 > 1 AND a.manager_start_date < %s  \
-                    ORDER BY a.risk_assessment_sharpby DESC, a.risk_rating_5 DESC;"
-        self.cursor.execute(sql, [quarter_index, last_year_date])    # 执行sql语句
-        results = self.cursor.fetchall()    # 获取查询的所有记录
-        return results
-
     def select_certain_condition_funds(self, *, quarter_index=None, morning_star_rating_5=None, morning_star_rating_3=None, manager_start_date=None, stock_position_total=None, stock_position_ten=None, **rest_dicts):
         print("rest_dicts", rest_dicts)
         if quarter_index == None:

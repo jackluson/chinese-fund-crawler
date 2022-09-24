@@ -254,13 +254,16 @@ def update_xlsx_file_with_insert(path, df_data, sheet_name, index = 0):
         if os.path.exists(path):
             writer = pd.ExcelWriter(path, engine='openpyxl')
             workbook = load_workbook(path)
+            if sheet_name in workbook.sheetnames:
+                del workbook[sheet_name]
             writer.book = workbook
             df_data.to_excel(
                     writer,  sheet_name=sheet_name)
             workbook = writer.book
             writer.sheets = {ws.title:ws for ws in workbook.worksheets}
-            del workbook[sheet_name]
             # workbook.remove(sheet_name)
+            del workbook[sheet_name]
+            
             workbook._add_sheet(writer.sheets.get(sheet_name), index)
             writer.book = workbook
 

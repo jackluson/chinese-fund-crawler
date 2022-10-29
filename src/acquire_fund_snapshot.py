@@ -56,7 +56,7 @@ def text_to_be_present_in_element(locator, text, next_page_locator):
 def get_fund_list(page_index):
     morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
     chrome_driver = login_morning_star(morning_fund_selector_url, False)
-    # 定义起始页码
+
     page_count = 25 # 晨星固定分页数
     page_total = math.ceil(int(chrome_driver.find_element_by_xpath(
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
@@ -100,8 +100,10 @@ def get_fund_list(page_index):
         class_list = ['gridItem', 'gridAlternateItem']  # 数据在这两个类下
         # 取出所有类的信息，并保存到对应的列表里
         for i in range(len(class_list)):
-            for tr in bs.find_all('tr', {'class': class_list[i]}):
+            tr_list = bs.find_all('tr', {'class': class_list[i]})
+            for tr_index in range(len(tr_list)):
                 # 雪花id
+                tr = tr_list[tr_index]
                 worker = IdWorker()
                 id_list.append(worker.get_id())
                 tds_text = tr.find_all('td', {'class': "msDataText"})
@@ -118,16 +120,19 @@ def get_fund_list(page_index):
                 # print("name_list", name_list)
                 # 基金分类
                 fund_cat.append(tds_text[2].string)
-                # 三年评级
+                index = str(tr_index * 2 + 2 + i)
+                rating_3_img_ele_xpath = chrome_driver.find_element_by_xpath('//*[@id="ctl00_cphMain_gridResult"]/tbody/tr[' + index + ']/td[5]/img')
+                rating_5_img_ele_xpath = chrome_driver.find_element_by_xpath('//*[@id="ctl00_cphMain_gridResult"]/tbody/tr[' + index + ']/td[6]/img')
+                # 三年评级 //*[@id="ctl00_cphMain_gridResult"]/tbody/tr[2]/td[7]/img
                 # rating = None
                 rating_3_img_ele = tds_text[3].find_all('img')[0]
                 rating_3_src = rating_3_img_ele['src']
-                rating = get_star_count(rating_3_src, current_morning_code, rating_3_img_ele)
+                rating = get_star_count(rating_3_src, current_morning_code, rating_3_img_ele_xpath)
                 fund_rating_3.append(rating)
                 # 5年评级
                 rating_5_img_ele = tds_text[4].find_all('img')[0]
                 rating_5_src = rating_5_img_ele['src']
-                rating = get_star_count(rating_5_src, current_morning_code, rating_5_img_ele)
+                rating = get_star_count(rating_5_src, current_morning_code, rating_5_img_ele_xpath)
                 fund_rating_5.append(rating)
                 # 今年以来回报(%)
                 return_value = tds_nume[3].string if tds_nume[3].string != '-' else None

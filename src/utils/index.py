@@ -25,6 +25,8 @@ samples_dir = dir + 'assets/samples/'
 def use_sewar_get_star_level(img_path):
     sample_imgs = os.listdir(samples_dir)
     img1 = io.imread(fname=img_path)
+    res_uqi = 0
+    res_sam = 1
     for filename in sample_imgs:
         level = filename[-5:-4]
         img_path_2 = samples_dir + filename
@@ -32,10 +34,10 @@ def use_sewar_get_star_level(img_path):
         res_uqi = uqi(img1, img2)
         res_sam = sam(img1, img2)
 
-        if res_uqi > 0.98 and res_sam < 0.11:
+        if res_uqi > 0.98 and res_sam < 0.115:
             # res_level = level2
             return level
-    print('img_path', img_path)
+    print('res_uqi:', res_uqi, 'res_sam:', res_sam)
     raise "img_path 图片比较失败"
 def lock_process(func):
     lock = Lock()
@@ -102,7 +104,6 @@ def get_star_count(morning_star_url, fund_code, img_ele=None):
     try:
         return get_star_count_with_sewar(fund_code, img_ele)
     except BaseException:
-        print("BaseException", BaseException)
         print('图片相似度比较失败')
     return get_star_count_with_np(morning_star_url)
     
@@ -197,7 +198,7 @@ def get_stock_market(stock_code):
         return '其他'
 
 
-def update_xlsx_file(path, df_data, sheet_name, sorted_worksheets = []):
+def update_xlsx_file(path, df_data, sheet_name):
     try:
         if os.path.exists(path):
             writer = pd.ExcelWriter(path, engine='openpyxl')

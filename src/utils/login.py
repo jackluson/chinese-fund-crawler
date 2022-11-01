@@ -10,7 +10,7 @@ Copyright (c) 2021 Camel Lu
 import time
 import os
 from dotenv import load_dotenv
-
+from selenium.webdriver.common.by import By
 from .cookies import set_cookies
 
 load_dotenv()
@@ -60,16 +60,17 @@ def mock_login_site(chrome_driver, site_url, redirect_url=None):
         '?ReturnUrl=' + redirect_url
     chrome_driver.get(site_url)
     time.sleep(2)
-    from selenium.webdriver.support import expected_conditions as EC
-    username = chrome_driver.find_element_by_id('emailTxt')
-    password = chrome_driver.find_element_by_id('pwdValue')
+    username = chrome_driver.find_element(By.ID, 'emailTxt')
+    password = chrome_driver.find_element(By.ID, 'pwdValue')
+    # username = chrome_driver.find_element_by_id('emailTxt')
+    # password = chrome_driver.find_element_by_id('pwdValue')
     env_username = os.getenv('morning_star_username')
     env_password = os.getenv('morning_star_password')
     username.send_keys(env_username)
     password.send_keys(env_password)
-    submit = chrome_driver.find_element_by_id('loginGo')
+    submit = chrome_driver.find_element(By.ID, 'loginGo')
+    # submit = chrome_driver.find_element_by_id('loginGo')
     submit.click()
-    # check_code = chrome_driver.find_element_by_id('txtCheckCode')
     # count = 1
     # flag = True
     # while count < 10 and flag:
@@ -78,7 +79,6 @@ def mock_login_site(chrome_driver, site_url, redirect_url=None):
     #     time.sleep(1)
     #     check_code.send_keys(code)
     #     time.sleep(3)
-    #     submit = chrome_driver.find_element_by_id('loginGo')
     #     submit.click()
     #     # 通过弹窗判断验证码是否正确
     #     time.sleep(3)
@@ -104,13 +104,7 @@ def mock_login_site(chrome_driver, site_url, redirect_url=None):
     return True
 
 
-def login_morning_star(redirect_url, is_cookies_login=False):
-    from selenium import webdriver
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument('--headless')
-    chrome_driver = webdriver.Chrome(options=chrome_options)
-    chrome_driver.set_page_load_timeout(12000)
+def login_morning_star(chrome_driver, redirect_url, is_cookies_login=False):
     """
     模拟登录,支持两种方式：
         1. 设置已经登录的cookie
@@ -126,7 +120,8 @@ def login_morning_star(redirect_url, is_cookies_login=False):
             chrome_driver, login_url, redirect_url)
         if login_status:
             print('login success')
+            return True
         else:
             print('login fail')
-            exit()
-    return chrome_driver
+            return False
+            # exit()

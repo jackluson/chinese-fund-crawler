@@ -9,9 +9,11 @@ Copyright (c) 2022 Camel Lu
 '''
 
 import sys
+
 sys.path.append('./src')
-from sqlalchemy.orm import Session
 from sqlalchemy import and_
+from sqlalchemy.orm import Session
+
 from models.fund import FundBase, FundQuarter
 from models.manager import ManagerAssoc
 from models.var import engine
@@ -35,6 +37,17 @@ def query_high_score_funds(quarter_index):
     ).filter(rule).all()
     return res
 
+def query_all_fund():
+    all_funds = session.query(FundBase).all()
+    all_fund_dict = {}
+    for fund in all_funds:
+        all_fund_dict[fund.fund_code] = {
+            'fund_code': fund.fund_code,
+            'morning_star_code': fund.morning_star_code,
+            'fund_name': fund.fund_name,
+            'fund_cat': fund.fund_cat,
+        }
+    return all_fund_dict
 
 if __name__ == '__main__':
     quarter_index = '2022-Q2'

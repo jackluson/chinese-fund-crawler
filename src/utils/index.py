@@ -1,17 +1,15 @@
 
-import time
 import datetime
 import os
+import re
+import time
+from threading import Lock, Thread
+
 import numpy as np
 import requests
 from PIL import Image
+from sewar.full_ref import sam, uqi
 from skimage import io
-from sewar.full_ref import uqi, sam
-import re
-from threading import Thread, Lock
-
-import pandas as pd
-from openpyxl import load_workbook
 
 requests.adapters.DEFAULT_RETRIES = 10 # 增加重连次数
 s = requests.session()
@@ -39,6 +37,7 @@ def use_sewar_get_star_level(img_path):
             return level
     print('res_uqi:', res_uqi, 'res_sam:', res_sam)
     raise "img_path 图片比较失败"
+
 def lock_process(func):
     lock = Lock()
 
@@ -49,13 +48,11 @@ def lock_process(func):
         return result
     return wrapper
 
-
 def debug(func):
     def wrapper(self, *args):  # 指定一毛一样的参数
         print("[DEBUG]: enter {}()".format(func.__name__))
         return func(self, *args)
     return wrapper  # 返回包装过函数
-
 
 def get_star_count_with_sewar(fund_code, img_ele):
     picture_time = time.strftime(
@@ -76,7 +73,6 @@ def get_star_count_with_sewar(fund_code, img_ele):
         return use_sewar_get_star_level(code_path)
     else:
         raise "截图失败"
-    
 
 def get_star_count_with_np(morning_star_url):
     module_path = os.getcwd() + '/src'
@@ -106,8 +102,6 @@ def get_star_count(morning_star_url, fund_code, img_ele=None):
     except BaseException:
         print('图片相似度比较失败')
     return get_star_count_with_np(morning_star_url)
-    
-
 
 def parse_csv(datafile):
     data = []
@@ -125,7 +119,6 @@ def parse_csv(datafile):
             counter += 1
 
     return data
-
 
 def get_quarter_index(input_date):
     year = time.strftime("%Y", time.localtime())
@@ -197,85 +190,6 @@ def get_stock_market(stock_code):
     else:
         return '其他'
 
-
-def update_xlsx_file(path, df_data, sheet_name):
-    try:
-        if os.path.exists(path):
-            writer = pd.ExcelWriter(path, engine='openpyxl')
-            book = load_workbook(path)
-            # 表名重复，删掉，重写
-            if sheet_name in book.sheetnames:
-                del book[sheet_name]
-            if len(book.sheetnames) == 0:
-                df_data.to_excel(
-                    path, sheet_name=sheet_name)
-                return
-            else:
-                writer.book = book
-            df_data.to_excel(
-                    writer, sheet_name=sheet_name)
-
-            writer.save()
-            writer.close()
-        else:
-            df_data.to_excel(
-                path, sheet_name=sheet_name)
-    except BaseException:
-        print("path", path)
-        raise BaseException('更新excel失败')
-
-
-def update_xlsx_file_with_sorted(path, df_data, sheet_name, sorted_sheetnames = []):
-    try:
-        if os.path.exists(path):
-            writer = pd.ExcelWriter(path, engine='openpyxl')
-            workbook = load_workbook(path)
-            writer.book = workbook
-            writer.sheets = {ws.title:ws for ws in workbook.worksheets}
-            for sheet_item in sorted_sheetnames:
-                del workbook[sheet_item]
-            df_data.to_excel(
-                    writer,  sheet_name=sheet_name)
-            workbook = writer.book
-            for worksheet in sorted_sheetnames:
-                workbook._add_sheet(writer.sheets.get(worksheet))
-            writer.book = workbook
-
-            writer.save()
-            writer.close()
-        else:
-            df_data.to_excel(
-                path, sheet_name=sheet_name)
-    except BaseException:
-        print("path", path)
-        raise BaseException('更新excel失败')
-
-def update_xlsx_file_with_insert(path, df_data, sheet_name, index = 0):
-    try:
-        if os.path.exists(path):
-            writer = pd.ExcelWriter(path, engine='openpyxl')
-            workbook = load_workbook(path)
-            if sheet_name in workbook.sheetnames:
-                del workbook[sheet_name]
-            writer.book = workbook
-            df_data.to_excel(
-                    writer,  sheet_name=sheet_name)
-            workbook = writer.book
-            writer.sheets = {ws.title:ws for ws in workbook.worksheets}
-            # workbook.remove(sheet_name)
-            del workbook[sheet_name]
-            
-            workbook._add_sheet(writer.sheets.get(sheet_name), index)
-            writer.book = workbook
-
-            writer.save()
-            writer.close()
-        else:
-            df_data.to_excel(
-                path, sheet_name=sheet_name)
-    except BaseException:
-        print("path", path)
-        raise BaseException('更新excel失败')
 
 def bootstrap_thread(target_fn, total, thread_count=2):
     threaders = []

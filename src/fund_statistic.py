@@ -9,15 +9,20 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2020 Camel Lu
 '''
-import re
 import decimal
+import re
 from functools import cmp_to_key
 from pprint import pprint
-import pandas as pd
+
 import numpy as np
+import pandas as pd
+
 from fund_info.statistic import FundStatistic
-from utils.index import get_last_quarter_str, get_stock_market, find_from_list_of_dict, update_xlsx_file, update_xlsx_file_with_sorted, update_xlsx_file_with_insert
-from utils.file_op import read_dir_all_file
+from utils.file_op import (read_dir_all_file, update_xlsx_file,
+                           update_xlsx_file_with_insert,
+                           update_xlsx_file_with_sorted)
+from utils.index import (find_from_list_of_dict, get_last_quarter_str,
+                         get_stock_market)
 
 
 def get_fund_code_pool(condition_dict):

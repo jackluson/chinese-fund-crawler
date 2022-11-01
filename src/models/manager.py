@@ -8,13 +8,15 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2022 Camel Lu
 '''
 import sys
-sys.path.append('./src')
-from sqlalchemy.orm import registry, relationship
-from sqlalchemy import UniqueConstraint, Table, Column, Integer, BigInteger, String, ForeignKey, text, DateTime, Date, func
-from db.engine import get_engine
-from models.var import prefix, ORM_Base, engine, Model
-from lib.mysnowflake import IdWorker
 
+sys.path.append('./src')
+from sqlalchemy import (BigInteger, Column, Date, DateTime, ForeignKey,
+                        Integer, String, Table, UniqueConstraint, func, text)
+from sqlalchemy.orm import registry, relationship
+
+from db.engine import get_engine
+from lib.mysnowflake import IdWorker
+from models.var import Model, ORM_Base, engine, prefix
 
 manager_table_name = prefix + 'manager'
 manager_table = Table(manager_table_name, ORM_Base.metadata, autoload=True, autoload_with=engine)

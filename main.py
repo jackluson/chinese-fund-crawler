@@ -34,7 +34,7 @@ def main():
         10.“高分基金”\n \
     输入：")
     if input_value == '1':
-        page_index = 0
+        page_index = 1
         get_fund_list(page_index)  # 执行申万行业信息入库
     elif input_value == '2':
         acquire_fund_base()  # 执行行业股票信息入库

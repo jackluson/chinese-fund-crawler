@@ -9,6 +9,7 @@ Copyright (c) 2021 Camel Lu
 '''
 import requests
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 
 
 chrome_options = webdriver.ChromeOptions()
@@ -23,7 +24,7 @@ def get_tiantian_fund_list(chrome_driver):
   # # print("res", res.text)
 
   chrome_driver.get(fund_list_url)
-  fund_list_code_str =  chrome_driver.find_element_by_tag_name("pre").text
+  fund_list_code_str =  chrome_driver.find_element(By.TAG_NAME, "pre").text
   return_value_code_str = ";return {\
                             fund_list: r \
                             };"
@@ -44,7 +45,7 @@ content_text = chrome_driver.page_source
 
 
 
-fund_item_code_str =  chrome_driver.find_element_by_tag_name("pre").text
+fund_item_code_str =  chrome_driver.find_element(By.TAG_NAME, "pre").text
 
 execute_return_item = chrome_driver.execute_script(fund_item_code_str + return_value_code_str)
 print("execute_return", execute_return_item)

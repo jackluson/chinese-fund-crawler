@@ -17,6 +17,7 @@ from models.var import ORM_Base, engine, Model
 
 class Quarter(ORM_Base, Model):
     __tablename__ = 'quarter'
+    __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True)
     quarter_index = Column(String(12), nullable=False, unique=True)
     start_time = Column(Date(), nullable=False, unique=True)
@@ -26,7 +27,16 @@ class Quarter(ORM_Base, Model):
     UniqueConstraint(quarter_index, name='uix_1')
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+        column_keys = self.__table__.columns.keys()
+        udpate_data = dict()
+        for key in kwargs.keys():
+            if key not in column_keys:
+                continue
+            else:
+                udpate_data[key] = kwargs[key]
+        ORM_Base.__init__(self, **udpate_data)
+        Model.__init__(self, **kwargs, id = self.id)
+
 
     @validates('end_time')
     def validate_start_time(self, key, end_time):
@@ -39,7 +49,7 @@ class Quarter(ORM_Base, Model):
         return end_time
 
     def __repr__(self):
-        return f"Quarter(id={self.id!r}, name={self.quarter_index!r})"
+        return f"Quarter(name={self.quarter_index!r})"
 
 def create():
     ORM_Base.metadata.create_all(engine)

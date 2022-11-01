@@ -9,18 +9,20 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2020 Camel Lu
 '''
 
+from pprint import pprint
 from threading import Lock, current_thread
 from time import sleep, time
-from pprint import pprint
-from fund_info.crawler import FundSpider
+
 from fund_info.api import FundApier
+from fund_info.crawler import FundSpider
 from fund_info.csv import FundCSV
 from lib.mysnowflake import IdWorker
-from utils.login import login_morning_star
-from utils.index import bootstrap_thread
-from sql_model.fund_query import FundQuery
-from sql_model.fund_insert import FundInsert
 from models.manager import Manager, ManagerAssoc
+from sql_model.fund_insert import FundInsert
+from sql_model.fund_query import FundQuery
+from utils.driver import create_chrome_driver
+from utils.index import bootstrap_thread
+from utils.login import login_morning_star
 
 # 利用api获取同类基金的资产
 
@@ -48,7 +50,8 @@ def acquire_fund_quarter():
 
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-        chrome_driver = login_morning_star(login_url, False)
+        chrome_driver = create_chrome_driver()
+        login_morning_star(chrome_driver, login_url, False)
         page_start = start
         page_limit = 10
         try:

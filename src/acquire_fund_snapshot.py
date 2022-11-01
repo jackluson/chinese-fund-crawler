@@ -19,46 +19,25 @@ from time import sleep
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 
 from db.connect import connect
 from lib.mysnowflake import IdWorker
-from utils.index import get_star_count, bootstrap_thread
+from utils.index import get_star_count
 from utils.login import login_morning_star
+from utils.driver import create_chrome_driver, text_to_be_present_in_element
 
 connect_instance = connect()
 cursor = connect_instance.cursor()
 
 
-
-def text_to_be_present_in_element(locator, text, next_page_locator):
-    """ An expectation for checking if the given text is present in the
-    specified element.
-    locator, text -- 判读是否当前页一致，没有的话，切换上一页，下一页操作
-    """
-    def _predicate(driver):
-        try:
-            element_text = driver.find_element_by_xpath(locator).text
-            if int(element_text) != int(text):
-                # 跳转指定的js执行代码
-                js_content = "javascript:__doPostBack('ctl00$cphMain$AspNetPager1','{}')".format(
-                    text)
-                execute_return = driver.execute_script(js_content)
-                print('execute_return', execute_return)
-                sleep(5)
-
-            return text == element_text
-        except:
-            return False
-
-    return _predicate
-
-
 def get_fund_list(page_index):
     morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
-    chrome_driver = login_morning_star(morning_fund_selector_url, False)
+    chrome_driver = create_chrome_driver()
+    login_morning_star(chrome_driver, morning_fund_selector_url, False)
 
     page_count = 25 # 晨星固定分页数
-    page_total = math.ceil(int(chrome_driver.find_element_by_xpath(
+    page_total = math.ceil(int(chrome_driver.find_element(By.XPATH,
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)
     result_dir = './output/'
     output_head = '代码' + ',' + '晨星专属号' + ',' + '名称' + ',' + \
@@ -121,8 +100,8 @@ def get_fund_list(page_index):
                 # 基金分类
                 fund_cat.append(tds_text[2].string)
                 index = str(tr_index * 2 + 2 + i)
-                rating_3_img_ele_xpath = chrome_driver.find_element_by_xpath('//*[@id="ctl00_cphMain_gridResult"]/tbody/tr[' + index + ']/td[5]/img')
-                rating_5_img_ele_xpath = chrome_driver.find_element_by_xpath('//*[@id="ctl00_cphMain_gridResult"]/tbody/tr[' + index + ']/td[6]/img')
+                rating_3_img_ele_xpath = chrome_driver.find_element(By.XPATH, '//*[@id="ctl00_cphMain_gridResult"]/tbody/tr[' + index + ']/td[5]/img')
+                rating_5_img_ele_xpath = chrome_driver.find_element(By.XPATH, '//*[@id="ctl00_cphMain_gridResult"]/tbody/tr[' + index + ']/td[6]/img')
                 # 三年评级 //*[@id="ctl00_cphMain_gridResult"]/tbody/tr[2]/td[7]/img
                 # rating = None
                 rating_3_img_ele = tds_text[3].find_all('img')[0]
@@ -156,7 +135,7 @@ def get_fund_list(page_index):
                 csv_file.write(output_line)
 
         # 获取下一页元素
-        next_page = chrome_driver.find_element_by_xpath(
+        next_page = chrome_driver.find_element(By.XPATH,
             xpath_str)
         # 点击下一页
         next_page.click()
@@ -168,5 +147,5 @@ def get_fund_list(page_index):
 
 
 if __name__ == "__main__":
-    page_index = 1
+    page_index = 127
     fund_list = get_fund_list(page_index)

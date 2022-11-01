@@ -7,10 +7,14 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
-from datetime import timedelta, date
-from utils.index import get_last_quarter_str, update_xlsx_file_with_insert
-from crud.query import query_high_score_funds
+from datetime import date, timedelta
+
 import pandas as pd
+
+from crud.query import query_high_score_funds
+from utils.file_op import update_xlsx_file_with_insert
+from utils.index import get_last_quarter_str
+
 
 def output_high_score_funds(quarter_index=None):
     """

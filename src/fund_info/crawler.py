@@ -10,8 +10,9 @@ Copyright (c) 2020 Camel Lu
 
 import re
 from datetime import datetime, timedelta, date
-from time import sleep, time
+from time import sleep
 from utils.index import get_star_count, get_quarter_index, get_last_quarter_str
+from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 
 
@@ -73,8 +74,8 @@ class FundSpider:
 
     def get_element_text_by_class_name(self, class_name, parent_id):
         try:
-            text = self._chrome_driver.find_element_by_id(
-                parent_id).find_element_by_class_name(class_name).text
+            text = self._chrome_driver.find_element(By.ID, 
+                parent_id).find_element(By.CLASS_NAME, class_name).text
             return text if text != '-' else None
         except NoSuchElementException:
             self._is_trigger_catch = True
@@ -90,7 +91,7 @@ class FundSpider:
 
     def get_element_text_by_id(self, id):
         try:
-            text = self._chrome_driver.find_element_by_id(
+            text = self._chrome_driver.find_element(By.ID, 
                 id).text
             return text if text != '-' else None
         except NoSuchElementException:
@@ -108,10 +109,10 @@ class FundSpider:
         try:
             text = '-'
             if parent_el == None:
-                text = self._chrome_driver.find_element_by_xpath(xpath).text if parent_id == None else self._chrome_driver.find_element_by_id(
-                    parent_id).find_element_by_xpath(xpath).text
+                text = self._chrome_driver.find_element(By.XPATH, xpath).text if parent_id == None else self._chrome_driver.find_element(By.ID, 
+                    parent_id).find_element(By.XPATH, xpath).text
             else:
-                text = parent_el.find_element_by_xpath(xpath).text
+                text = parent_el.find_element(By.XPATH, xpath).text
             return text if text != '-' else None
         except NoSuchElementException:
             self._is_trigger_catch = True
@@ -138,12 +139,12 @@ class FundSpider:
 
     # 获取基金经理信息（多位在任基金经理，只需第一位）
     def get_fund_manager_info(self):
-        manager_ele_list = self._chrome_driver.find_element_by_id(
+        manager_ele_list = self._chrome_driver.find_element(By.ID, 
             'qt_manager').find_elements_by_xpath("ul")
         for manager_ele in manager_ele_list:
             try:
                 # 基金经理
-                manager_name = manager_ele.find_element_by_xpath(
+                manager_name = manager_ele.find_element(By.XPATH, 
                     "li[@class='col1']/a").text
                 # 仅仅记录目前在职的
                 if '[离任]' in manager_name:
@@ -151,14 +152,14 @@ class FundSpider:
                 manager = dict()
                 manager['name'] = manager_name
                 manager_id = re.findall(
-                    r'(?<=managerid=)(\w+)$', manager_ele.find_element_by_xpath("li[@class='col1']/a").get_attribute('href')).pop(0)
+                    r'(?<=managerid=)(\w+)$', manager_ele.find_element(By.XPATH, "li[@class='col1']/a").get_attribute('href')).pop(0)
 
                 if not manager_id:
                     continue
                 manager['manager_id'] = manager_id
-                manager['manager_start_date'] = manager_ele.find_element_by_xpath(
+                manager['manager_start_date'] = manager_ele.find_element(By.XPATH, 
                     "li[@class='col1']/i").text[0:10]
-                manager['brife'] = manager_ele.find_element_by_xpath(
+                manager['brife'] = manager_ele.find_element(By.XPATH, 
                     "li[@class='col2']").text
                 self.manager_list.append(manager)
 
@@ -172,14 +173,14 @@ class FundSpider:
 
     def get_fund_morning_rating(self):
         try:
-            qt_el = self._chrome_driver.find_element_by_id('qt_star')
-            rating_3_img_ele = qt_el.find_element_by_xpath(
+            qt_el = self._chrome_driver.find_element(By.ID, 'qt_star')
+            rating_3_img_ele = qt_el.find_element(By.XPATH, 
                 "//li[@class='star3']/img")
             rating_3_src = rating_3_img_ele.get_attribute('src')
-            rating_5_img_ele = qt_el.find_element_by_xpath(
+            rating_5_img_ele = qt_el.find_element(By.XPATH, 
                 "//li[@class='star5']/img")
             rating_5_src = rating_5_img_ele.get_attribute('src')
-            rating_10_img_ele = qt_el.find_element_by_xpath(
+            rating_10_img_ele = qt_el.find_element(By.XPATH, 
                 "//li[@class='star10']/img")
             rating_10_src = rating_10_img_ele.get_attribute('src')
 
@@ -219,14 +220,14 @@ class FundSpider:
 
     def get_fund_qt_rating(self):
         try:
-            qt_el = self._chrome_driver.find_element_by_id('qt_rating')
-            rating_2_src = qt_el.find_element_by_xpath(
+            qt_el = self._chrome_driver.find_element(By.ID, 'qt_rating')
+            rating_2_src = qt_el.find_element(By.XPATH, 
                 "//li[5]/img").get_attribute('src')
-            rating_3_src = qt_el.find_element_by_xpath(
+            rating_3_src = qt_el.find_element(By.XPATH, 
                 "li[6]/img").get_attribute('src')
-            rating_5_src = qt_el.find_element_by_xpath(
+            rating_5_src = qt_el.find_element(By.XPATH, 
                 "li[7]/img").get_attribute('src')
-            rating_10_src = qt_el.find_element_by_xpath(
+            rating_10_src = qt_el.find_element(By.XPATH, 
                 "li[8]/img").get_attribute('src')
             # //*[@id="qt_rating"]/li[6]/img
             rating_2 = re.findall(
@@ -291,8 +292,8 @@ class FundSpider:
         self.bond_position["five"] = five_bond_position
 
         # 获取标准差
-        # standard_deviation = self._chrome_driver.find_element_by_id(
-        #     "qt_risk").find_element_by_xpath('li[16]').text
+        # standard_deviation = self._chrome_driver.find_element(By.ID, 
+        #     "qt_risk").find_element(By.XPATH, 'li[16]').text
         standard_deviation = self.get_element_text_by_xpath(
             'li[16]', 'qt_risk')
         if standard_deviation != None:
@@ -321,8 +322,8 @@ class FundSpider:
 
     def get_asset_composition_info(self):
         # 判断是否含有股票持仓
-        li_elements = self._chrome_driver.find_element_by_id(
-            'qt_stock').find_elements_by_xpath("li")
+        li_elements = self._chrome_driver.find_element(By.ID, 
+            'qt_stock').find_elements(By.XPATH ,"li")
         for index in range(4, len(li_elements) - 1, 4):
             temp_stock_info = dict()  # 一只股票信息
             stock_base = re.split('\.|\s', li_elements[index].text)

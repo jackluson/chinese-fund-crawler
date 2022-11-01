@@ -8,12 +8,15 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2020 Camel Lu
 '''
 from threading import Lock
-from utils.login import login_morning_star
-from utils.index import bootstrap_thread
+
 from fund_info.crawler import FundSpider
 from lib.mysnowflake import IdWorker
-from sql_model.fund_query import FundQuery
 from sql_model.fund_insert import FundInsert
+from sql_model.fund_query import FundQuery
+from utils.driver import create_chrome_driver
+from utils.index import bootstrap_thread
+from utils.login import login_morning_star
+
 
 def acquire_fund_base():
     lock = Lock()
@@ -30,7 +33,9 @@ def acquire_fund_base():
 
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
-        chrome_driver = login_morning_star(login_url, False)
+        chrome_driver = create_chrome_driver()
+        login_morning_star(chrome_driver, login_url, False)
+        
         page_start = start
         page_limit = 10
         # 遍历从基金列表的单支基金

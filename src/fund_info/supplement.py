@@ -8,17 +8,17 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2021 Camel Lu
 '''
 
-from utils.index import get_last_quarter_str
+from fund_info.api import FundApier
 from sql_model.fund_query import FundQuery
 from sql_model.fund_update import FundUpdate
-from fund_info.api import FundApier
+from utils.index import get_last_quarter_str
+
 
 class FundSupplement:
     def __init__(self, code=None):
       self.fund_code = code
       # 动态计算季度信息
       self.quarter_index = get_last_quarter_str()
-    
     def update_archive_status(self):
       fund_query = FundQuery()
       each_fund_update = FundUpdate()

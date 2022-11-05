@@ -49,8 +49,13 @@ def query_all_fund():
         }
     return all_fund_dict
 
+def query_empty_company_and_found_date_fund(start, size):
+    all_funds = session.query(FundBase).where(FundBase.company == None, FundBase.found_date == None, FundBase.is_archive==0).offset(start).limit(size).all()
+    return all_funds
+
 if __name__ == '__main__':
     quarter_index = '2022-Q2'
-    fund_list = query_high_score_funds(quarter_index)
+    # fund_list = query_high_score_funds(quarter_index)
+    query_empty_company_and_found_date_fund(2, 10)
     # print("fund_list",fund_list)
     

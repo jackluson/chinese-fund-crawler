@@ -1,4 +1,4 @@
-selenium==3.11.0
+selenium==4.5.0
 PyMySQL==1.0.2
 pandas==1.1.5
 requests==2.18.4

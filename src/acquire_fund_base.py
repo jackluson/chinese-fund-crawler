@@ -8,15 +8,13 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2020 Camel Lu
 '''
 from threading import Lock
-
-from fund_info.crawler import FundSpider
-from lib.mysnowflake import IdWorker
-from sql_model.fund_insert import FundInsert
-from sql_model.fund_query import FundQuery
+from utils.login import login_morning_star
 from utils.driver import create_chrome_driver
 from utils.index import bootstrap_thread
-from utils.login import login_morning_star
-
+from fund_info.crawler import FundSpider
+from lib.mysnowflake import IdWorker
+from sql_model.fund_query import FundQuery
+from sql_model.fund_insert import FundInsert
 
 def acquire_fund_base():
     lock = Lock()
@@ -45,16 +43,16 @@ def acquire_fund_base():
             for record in results:
                 each_fund = FundSpider(
                     record[0], record[1], record[2], chrome_driver)
-                # 从晨星网上更新信息
-                is_normal = each_fund.go_fund_url()
-                if is_normal == False:
+                # 是否能正常跳转到基金详情页
+                is_error_page = each_fund.go_fund_url()
+                if is_error_page == True:
                     lock.acquire()
                     error_funds.append(each_fund.fund_code)
                     lock.release()
                     continue
                 each_fund.get_fund_base_info()
                 # 去掉没有成立时间的
-                if each_fund.found_date == '-':
+                if each_fund.found_date == '-' or each_fund.found_date == None:
                     lock.acquire()
                     error_funds.append(each_fund.fund_code)
                     lock.release()

@@ -135,8 +135,8 @@ def further_complete_base_info():
                 }
                 fund_base = FundBase(**base_dict)
                 fund_base.upsert()
-            page_start = page_start + page_limit
             print('page_start', page_start)
+            page_start = page_start + page_limit
         chrome_driver.close()
     bootstrap_thread(crawlData, len(all_funds), 3)
 if __name__ == '__main__':
@@ -144,4 +144,3 @@ if __name__ == '__main__':
     page_index = 1
     # sync_fund_base(page_index)
     further_complete_base_info()
-    

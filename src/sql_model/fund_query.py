@@ -77,9 +77,14 @@ class FundQuery(BaseQuery):
     
     def get_select_quarter_condition(self):
         condition = "WHERE t.fund_cat NOT LIKE '%%货币%%' \
-        AND t.fund_cat NOT IN ('利率债', '利率债(封闭)', '短债', '短债基金', '短债型', '短债型(封闭)', '短债基金(封闭)',\
-        '纯债', '纯债基金', '纯债(封闭)', '纯债基金(封闭)',\
-        '普通债券型', '普通债券型(封闭)', '普通债券', '普通债券(封闭)', '普通债券型基金','普通债券型基金(封闭)', '信用债', '信用债(封闭)','目标日期', '商品 - 贵金属',  '商品 - 其它' ) \
+        AND t.fund_cat NOT LIKE '%%纯债%%' \
+        AND t.fund_cat NOT LIKE '%%普通债券%%' \
+        AND t.fund_cat NOT LIKE '%%短债%%' \
+        AND t.fund_cat NOT LIKE '%%利率债%%' \
+        AND t.fund_cat NOT LIKE '%%信用债%%' \
+        AND t.fund_cat NOT LIKE '%%商品%%' \
+        AND t.fund_cat NOT LIKE '%%环球债券%%' \
+        AND t.fund_cat NOT IN ('目标日期','亚洲高收益债券') \
         AND t.found_date <= %s \
         AND t.is_archive = 0 \
         AND t.fund_code	NOT IN( SELECT fund_code FROM fund_morning_quarter as b \

@@ -15,7 +15,7 @@ from time import sleep, time
 
 from fund_info.api import FundApier
 from fund_info.crawler import FundSpider
-from fund_info.csv import FundCSV
+from fund_info.fund_csv import FundCSV
 from lib.mysnowflake import IdWorker
 from models.manager import Manager, ManagerAssoc
 from sql_model.fund_insert import FundInsert
@@ -31,10 +31,13 @@ def get_total_asset(fund_code, platform):
     each_fund = FundApier(fund_code, end_date='2021-05-07', platform=platform)
     total_asset = each_fund.get_total_asset()
     # 如果在爱基金平台找不到，则到展恒基金找
-    if total_asset == None and platform == 'ai_fund':
-        print("fund_code", total_asset, fund_code)
+    if total_asset == None and platform != 'zh_fund':
         each_fund = FundApier(
             fund_code, end_date='2021-05-10', platform='zh_fund')
+        total_asset = each_fund.get_total_asset()
+    if total_asset == None and platform != 'ai_fund':
+        each_fund = FundApier(
+            fund_code, end_date='2021-05-10', platform='ai_fund')
         total_asset = each_fund.get_total_asset()
     return total_asset
 
@@ -182,15 +185,19 @@ def acquire_fund_quarter():
                         similar_name = each_fund.fund_name[0:-1]
                         results = each_fund_query.select_similar_fund(
                             similar_name)    # 获取查询的所有记录
-                        platform = 'zh_fund' if '封闭' in similar_name else 'ai_fund'
+                        # platform = 'zh_fund' if '封闭' in similar_name else 'ai_fund'
+                        platform = 'danjuan'
                         for i in range(0, len(results)):
                             item = results[i]
                             item_code = item[0]
                             if item_code == each_fund.fund_code:
                                 continue
-                            print("item_code", item_code, platform )
+                            print("item_code", item_code, platform)
                             total_asset = get_total_asset(item_code, platform)
-                            init_total_asset = init_total_asset - total_asset
+                            if total_asset != None:
+                                init_total_asset = init_total_asset - total_asset
+                            else:
+                                print("total_asset is None", item_code, item[2])
                             manager_assoc_data = {
                                 'quarter_index': quarter_index,
                                 'manager_start_date': manager_item['manager_start_date'],
@@ -225,7 +232,7 @@ def acquire_fund_quarter():
             chrome_driver.close()
             raise BaseException
         chrome_driver.close()
-    thread_count = 4
+    thread_count = 6
 
     # for count in range(6):
     total_start_time = time()

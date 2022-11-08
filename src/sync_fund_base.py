@@ -14,11 +14,14 @@ from bs4 import BeautifulSoup
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
-from crud.query import query_all_fund, query_empty_company_and_found_date_fund
-from models.fund import FundBase
+from crud.query import (query_all_fund,
+                        query_empty_company_and_found_date_fund,
+                        query_empty_company_or_found_date_fund)
 from fund_info.crawler import FundSpider
-from utils.index import bootstrap_thread
+from models.fund import FundBase
 from utils.driver import create_chrome_driver, text_to_be_present_in_element
+from utils.file_op import read_error_code_from_json, write_fund_json_data
+from utils.index import bootstrap_thread
 from utils.login import login_morning_star
 
 
@@ -94,8 +97,13 @@ def sync_fund_base(page_index):
     print('end')
 
 def further_complete_base_info():
-    all_funds = query_empty_company_and_found_date_fund(0, 10000)
-    error_funds = []
+    all_funds = query_empty_company_or_found_date_fund(0, 10000)
+    err_info = read_error_code_from_json()
+    error_funds_with_page = err_info.get('error_funds_with_page')
+    error_funds_with_found_date = err_info.get('error_funds_with_found_date')
+    error_funds_with_unmatch = err_info.get('error_funds_with_unmatch')
+    filename = err_info.get('filename')
+    file_dir = err_info.get('file_dir')
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
         chrome_driver = create_chrome_driver()
@@ -109,19 +117,21 @@ def further_complete_base_info():
             # results = query_empty_company_and_found_date_fund(page_start, page_limit)
             for record in results:
                 fund_code = record.fund_code
+                if fund_code in error_funds_with_page or fund_code in error_funds_with_found_date:
+                    continue
                 morning_star_code = record.morning_star_code
                 fund_name = record.fund_name
                 each_fund = FundSpider(fund_code, morning_star_code, fund_name, chrome_driver)
                 # 是否能正常跳转到基金详情页
                 is_error_page = each_fund.go_fund_url()
                 if is_error_page == True:
-                    error_funds.append(each_fund.fund_code)
+                    error_funds_with_page.append(each_fund.fund_code)
                     continue
                 each_fund.get_fund_base_info()
                 # 去掉没有成立时间的
                 if each_fund.found_date == '-' or each_fund.found_date == None:
                     # lock.acquire()
-                    error_funds.append(each_fund.fund_code)
+                    error_funds_with_found_date.append(each_fund.fund_code)
                     # lock.release()
                     continue
                 # 拼接sql需要的数据
@@ -138,7 +148,12 @@ def further_complete_base_info():
             print('page_start', page_start)
             page_start = page_start + page_limit
         chrome_driver.close()
-    bootstrap_thread(crawlData, len(all_funds), 3)
+    try:
+        bootstrap_thread(crawlData, len(all_funds), 6)
+        write_fund_json_data({'error_funds_with_page': error_funds_with_page, 'error_funds_with_found_date': error_funds_with_found_date, 'error_funds_with_unmatch': error_funds_with_unmatch}, filename=filename, file_dir=file_dir)
+    except:
+        write_fund_json_data({'error_funds_with_page': error_funds_with_page, 'error_funds_with_found_date': error_funds_with_found_date, 'error_funds_with_unmatch': error_funds_with_unmatch}, filename=filename, file_dir=file_dir)
+
 if __name__ == '__main__':
     #127, 300, 600-
     page_index = 1

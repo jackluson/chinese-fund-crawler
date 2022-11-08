@@ -7,11 +7,14 @@ Author: luxuemin2108@gmail.com
 -----
 Copyright (c) 2021 Camel Lu
 '''
+import json
 import os
 import time
 
 import pandas as pd
 from openpyxl import load_workbook
+
+from .index import get_last_quarter_str
 
 
 # 写json文件
@@ -29,8 +32,6 @@ def write_fund_json_data(data, filename, file_dir=None):
 
 def read_dir_all_file(path):
     return os.listdir(path)
-
-
 
 def update_xlsx_file(path, df_data, sheet_name):
     try:
@@ -110,3 +111,23 @@ def update_xlsx_file_with_insert(path, df_data, sheet_name, index = 0):
     except BaseException:
         print("path", path)
         raise BaseException('更新excel失败')
+
+def read_error_code_from_json():
+    quarter_index = get_last_quarter_str()
+    filename = 'error_funds_' + quarter_index + '.json'
+    file_dir = './output/json/'
+    error_funds_with_page = []
+    error_funds_with_unmatch = []
+    error_funds_with_found_date = []
+    if os.path.exists(file_dir + filename):
+        with open(file_dir + filename) as json_file:
+            my_data = json.load(json_file)
+            error_funds_with_page = my_data.get('error_funds_with_page')
+            error_funds_with_found_date = my_data.get('error_funds_with_found_date')
+    return {
+        "file_dir": file_dir,
+        "filename": filename,
+        'error_funds_with_unmatch': error_funds_with_unmatch,
+        'error_funds_with_page': error_funds_with_page,
+        'error_funds_with_found_date': error_funds_with_found_date
+    }

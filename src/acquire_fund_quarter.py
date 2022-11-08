@@ -22,6 +22,7 @@ from sql_model.fund_insert import FundInsert
 from sql_model.fund_query import FundQuery
 from utils.driver import create_chrome_driver
 from utils.index import bootstrap_thread
+from utils.file_op import read_error_code_from_json, write_fund_json_data
 from utils.login import login_morning_star
 
 # 利用api获取同类基金的资产
@@ -44,13 +45,17 @@ def get_total_asset(fund_code, platform):
 def acquire_fund_quarter():
     lock = Lock()
     each_fund_query = FundQuery()
-    
     idWorker = IdWorker()
-    result_dir = './output/'
-    fund_csv = FundCSV(result_dir)
-    fund_csv.write_season_catch_fund(True)
-    fund_csv.write_abnormal_url_fund(True)
-
+    # result_dir = './output/'
+    # fund_csv = FundCSV(result_dir)
+    # fund_csv.write_season_catch_fund(True)
+    # fund_csv.write_abnormal_url_fund(True)
+    err_info = read_error_code_from_json()
+    error_funds_with_page = err_info.get('error_funds_with_page')
+    error_funds_with_found_date = err_info.get('error_funds_with_found_date')
+    error_funds_with_unmatch = err_info.get('error_funds_with_unmatch')
+    filename = err_info.get('filename')
+    file_dir = err_info.get('file_dir')
     def crawlData(start, end):
         login_url = 'https://www.morningstar.cn/membership/signin.aspx'
         chrome_driver = create_chrome_driver()
@@ -62,29 +67,30 @@ def acquire_fund_quarter():
                 results = each_fund_query.select_quarter_fund(
                     page_start, page_limit)
                 for record in results:
-                    sleep(1)
-                    # 0P000179WG
-                    # 001811 中欧明睿新常态混合A
-                    each_fund = FundSpider(
-                        record[0], record[1], record[2], chrome_driver)
-                    
+                    fund_code = record[0]
+                    if fund_code in error_funds_with_page or fund_code in error_funds_with_found_date or fund_code in error_funds_with_unmatch:
+                        print('error fund: ', fund_code)
+                        continue
+                    each_fund = FundSpider(fund_code, record[1], record[2], chrome_driver)
                     each_fund.set_found_data(record[3])
                     is_error_page = each_fund.go_fund_url()
                     # 是否能正常跳转到基金详情页，没有的话，写入csv,退出当前循环
                     if is_error_page == True:
                         # error_funds.append(each_fund.fund_code)
-                        fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
-                                    each_fund.fund_name, record[3], page_start, '页面跳转有问题']
-                        output_line = ', '.join(str(x)
-                                                for x in fund_infos) + '\n'
-                        fund_csv.write_abnormal_url_fund(False, output_line)
+                        # fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
+                        #             each_fund.fund_name, record[3], page_start, '页面跳转有问题']
+                        # output_line = ', '.join(str(x)
+                        #                         for x in fund_infos) + '\n'
+                        # fund_csv.write_abnormal_url_fund(False, output_line)
+                        error_funds_with_page.append(each_fund.fund_code)
 
                         continue
                     # 开始爬取数据
                     quarter_index = each_fund.get_quarter_index()  # 数据更新时间,如果不一致，不爬取下面数据
                     if quarter_index != each_fund.quarter_index:
-                        print('quarter_index', quarter_index, each_fund.update_date,
-                            each_fund.fund_code, each_fund.fund_name)
+                        # print('quarter_index', quarter_index, each_fund.update_date,
+                        #     each_fund.fund_code, each_fund.fund_name)
+                        error_funds_with_unmatch.append(each_fund.fund_code)
                         continue
 
                     each_fund.get_fund_season_info()  # 基本季度性数据
@@ -95,14 +101,14 @@ def acquire_fund_quarter():
                     if each_fund.stock_position['total'] != '0.00' and each_fund.total_asset != None:
                         each_fund.get_asset_composition_info()
                     # 爬取过程中是否有异常,有的话，存在csv中
-                    if each_fund._is_trigger_catch == True:
-                        fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
-                                    each_fund.fund_name, record[3],
-                                    each_fund.stock_position['total'],
-                                    page_start, each_fund._catch_detail]
-                        output_line = ', '.join(str(x)
-                                                for x in fund_infos) + '\n'
-                        fund_csv.write_season_catch_fund(False, output_line)
+                    # if each_fund._is_trigger_catch == True:
+                    #     fund_infos = [each_fund.fund_code, each_fund.morning_star_code,
+                    #                 each_fund.fund_name, record[3],
+                    #                 each_fund.stock_position['total'],
+                    #                 page_start, each_fund._catch_detail]
+                    #     output_line = ', '.join(str(x)
+                    #                             for x in fund_infos) + '\n'
+                    #     fund_csv.write_season_catch_fund(False, output_line)
                     # 入库
                     lock.acquire()
                     snow_flake_id = idWorker.get_id()
@@ -157,7 +163,6 @@ def acquire_fund_quarter():
                         'morning_star_rating_5': each_fund.morning_star_rating.get(5),
                         'morning_star_rating_10': each_fund.morning_star_rating.get(10),
                     }
-                    
                     # 入库十大股票持仓
                     stock_position_total = each_fund.stock_position.get(
                         'total', '0.00')
@@ -192,7 +197,6 @@ def acquire_fund_quarter():
                             item_code = item[0]
                             if item_code == each_fund.fund_code:
                                 continue
-                            print("item_code", item_code, platform)
                             total_asset = get_total_asset(item_code, platform)
                             if total_asset != None:
                                 init_total_asset = init_total_asset - total_asset
@@ -233,25 +237,22 @@ def acquire_fund_quarter():
             raise BaseException
         chrome_driver.close()
     thread_count = 6
-
-    # for count in range(6):
     total_start_time = time()
     # record_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
-    # print("record_total", record_total)
     # bootstrap_thread(crawlData, record_total, thread_count)
-
-    for i in range(3):
-        print("i", i)
+    record_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
+    for i in range(2):
         start_time = time()
-        record_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
         print('record_total', record_total)
         try:
             bootstrap_thread(crawlData, record_total, thread_count)
         except:
-            end_time = time()
-            print("耗时: {:.2f}秒".format(end_time - start_time))
+            cur_total = each_fund_query.select_quarter_fund_total()    # 获取记录条数
+            print('crawler item count:', record_total - cur_total)
+            record_total = cur_total
         end_time = time()
         print("耗时: {:.2f}秒".format(end_time - start_time))
+    write_fund_json_data({'error_funds_with_page': error_funds_with_page, 'error_funds_with_found_date': error_funds_with_found_date, 'error_funds_with_unmatch': error_funds_with_unmatch}, filename=filename, file_dir=file_dir)
     total_end_time = time()
     print("total耗时: {:.2f}秒".format(total_end_time - total_start_time))
     exit()

@@ -61,14 +61,20 @@ class FundSpider:
             self.morning_star_code
 
         self._chrome_driver.get(morning_fund_selector_url)  # 打开爬取页面
-        sleep(6)
+        sleep(5)
         # 判断是否页面出错，重定向，如果是的话跳过
         if self._chrome_driver.current_url == 'https://www.morningstar.cn/errors/defaulterror.html':
             return True
-        while self._chrome_driver.page_source == None:
+        if 'Value cannot be null' in self._chrome_driver.title:
+            return True
+        try_count = 5
+        while self._chrome_driver.page_source == None and try_count > 0:
             self._chrome_driver.refresh()
             print('wait:fund_code', self.fund_code)
             sleep(9)
+            try_count -= 1
+        if self._chrome_driver.page_source == None:
+            return True
         return False
             # self._chrome_driver.execute_script('location.reload()')
 
@@ -140,7 +146,7 @@ class FundSpider:
     # 获取基金经理信息（多位在任基金经理，只需第一位）
     def get_fund_manager_info(self):
         manager_ele_list = self._chrome_driver.find_element(By.ID, 
-            'qt_manager').find_elements_by_xpath("ul")
+            'qt_manager').find_elements(By.XPATH, "ul")
         for manager_ele in manager_ele_list:
             try:
                 # 基金经理

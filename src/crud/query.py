@@ -11,7 +11,7 @@ Copyright (c) 2022 Camel Lu
 import sys
 
 sys.path.append('./src')
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from models.fund import FundBase, FundQuarter
@@ -53,9 +53,12 @@ def query_empty_company_and_found_date_fund(start, size):
     all_funds = session.query(FundBase).where(FundBase.company == None, FundBase.found_date == None, FundBase.is_archive==0).offset(start).limit(size).all()
     return all_funds
 
+def query_empty_company_or_found_date_fund(start, size):
+    all_funds = session.query(FundBase).where(FundBase.is_archive==0).filter(or_(FundBase.company == None, FundBase.found_date == None)).offset(start).limit(size).all()
+    return all_funds
 if __name__ == '__main__':
     quarter_index = '2022-Q2'
     # fund_list = query_high_score_funds(quarter_index)
-    query_empty_company_and_found_date_fund(2, 10)
+    query_empty_company_or_found_date_fund(0, 5000)
     # print("fund_list",fund_list)
     

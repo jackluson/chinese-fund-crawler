@@ -179,20 +179,16 @@ class FundApier:
                 res_json = res.json()
                 if res_json.get('result_code') == 0:
                     base_info = res.json().get('data')
-                    
                     total_asset = base_info.get('totshare')
                     if(total_asset.endswith('万')):
                         total_asset = round(float(total_asset[0:-1]) / 10000, 3)
                     elif(total_asset.endswith('亿')):
                         total_asset = float(total_asset[0:-1])
                     else:
-                        print(total_asset, "not a number")
+                        print(self.fund_code, ":", total_asset, "not a number")
                         return
                     self.total_asset = total_asset
                     return self.total_asset
-                else:
-                    pprint(res_json)
-                    print('code:1', self.fund_code)
             else:
                 pprint(res.content)
                 print('code:2', self.fund_code)

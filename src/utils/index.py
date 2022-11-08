@@ -7,13 +7,21 @@ from threading import Lock, Thread
 
 import numpy as np
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from PIL import Image
 from sewar.full_ref import sam, uqi
 from skimage import io
 
-requests.adapters.DEFAULT_RETRIES = 10 # 增加重连次数
-s = requests.session()
-s.keep_alive = False # 关闭多余连接
+# requests.adapters.DEFAULT_RETRIES = 10 # 增加重连次数
+# s = requests.session()
+# s.keep_alive = False # 关闭多余连接
+
+session = requests.Session()
+retry = Retry(connect=5, backoff_factor=0.5)
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
 
 dir = os.getcwd() + '/src/'
 
@@ -78,7 +86,7 @@ def get_star_count_with_np(morning_star_url):
     module_path = os.getcwd() + '/src'
     temp_star_url = module_path + '/assets/star/tmp.gif'
     try:
-        r = requests.get(morning_star_url)
+        r = session.get(morning_star_url)
     except BaseException:
         raise BaseException('请求失败')
     with open(temp_star_url, "wb") as f:
@@ -98,10 +106,10 @@ def get_star_count_with_np(morning_star_url):
 def get_star_count(morning_star_url, fund_code, img_ele=None):
     # path = './assets/star/star'
     try:
-        return get_star_count_with_sewar(fund_code, img_ele)
+        return get_star_count_with_np(morning_star_url)
     except BaseException:
-        print('图片相似度比较失败')
-    return get_star_count_with_np(morning_star_url)
+        print('图片比较失败')
+        return get_star_count_with_sewar(fund_code, img_ele)
 
 def parse_csv(datafile):
     data = []

@@ -91,7 +91,8 @@ class FundApier:
                         self.total_asset = float(total_asset)
                         return self.total_asset
                     except ValueError:
-                        print(total_asset, "not a number")
+                        print("ai->", self.fund_code, total_asset, "not a number")
+                        
                 else:
                     pprint(res_json)
                     print('code:1', self.fund_code)
@@ -127,7 +128,7 @@ class FundApier:
                         self.total_asset = float(total_asset)
                         return self.total_asset
                     except ValueError:
-                        print(total_asset, "not a number")
+                        print("zh->", self.fund_code, total_asset, "not a number")
                 else:
                     pprint(res_json)
                     print('code:1', self.fund_code)
@@ -185,7 +186,7 @@ class FundApier:
                     elif(total_asset.endswith('亿')):
                         total_asset = float(total_asset[0:-1])
                     else:
-                        print(self.fund_code, ":", total_asset, "not a number")
+                        print("danjuan->", self.fund_code, total_asset, "not a number")
                         return
                     self.total_asset = total_asset
                     return self.total_asset

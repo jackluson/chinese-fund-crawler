@@ -124,6 +124,7 @@ def read_error_code_from_json():
             my_data = json.load(json_file)
             error_funds_with_page = my_data.get('error_funds_with_page')
             error_funds_with_found_date = my_data.get('error_funds_with_found_date')
+            error_funds_with_unmatch = my_data.get('error_funds_with_unmatch')
     return {
         "file_dir": file_dir,
         "filename": filename,

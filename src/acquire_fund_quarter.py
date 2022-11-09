@@ -69,7 +69,7 @@ def acquire_fund_quarter():
                 for record in results:
                     fund_code = record[0]
                     if fund_code in error_funds_with_page or fund_code in error_funds_with_found_date or fund_code in error_funds_with_unmatch:
-                        print('error fund: ', fund_code)
+                        print('exist error fund: ', fund_code)
                         continue
                     each_fund = FundSpider(fund_code, record[1], record[2], chrome_driver)
                     each_fund.set_found_data(record[3])
@@ -184,16 +184,15 @@ def acquire_fund_quarter():
                             stock_dict[portion_key] = temp_stock['stock_portion']
                             market_key = prefix + 'market'
                             stock_dict[market_key] = temp_stock['stock_market']
-                        
                     # 获取同类基金，再获取同类基金的总资产
                     if each_fund.fund_name.endswith('A') or each_fund.fund_name.endswith('B') or each_fund.fund_name.endswith('C'):
                         similar_name = each_fund.fund_name[0:-1]
-                        results = each_fund_query.select_similar_fund(
+                        similar_results = each_fund_query.select_similar_fund(
                             similar_name)    # 获取查询的所有记录
                         # platform = 'zh_fund' if '封闭' in similar_name else 'ai_fund'
                         platform = 'danjuan'
-                        for i in range(0, len(results)):
-                            item = results[i]
+                        for i in range(0, len(similar_results)):
+                            item = similar_results[i]
                             item_code = item[0]
                             if item_code == each_fund.fund_code:
                                 continue

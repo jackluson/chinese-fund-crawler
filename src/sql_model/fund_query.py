@@ -188,7 +188,6 @@ class FundQuery(BaseQuery):
         sql_similar = "SELECT t.fund_code,\
                 t.morning_star_code, t.fund_name \
                 FROM fund_morning_base as t \
-                LEFT JOIN fund_morning_snapshot as f ON f.fund_code = t.fund_code \
                 WHERE t.fund_name LIKE %s;"
                     
                 # AND t.fund_name NOT LIKE '%%A';"

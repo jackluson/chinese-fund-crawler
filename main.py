@@ -13,13 +13,17 @@ import sys
 
 sys.path.append('./src')
 
-from src.acquire_fund_snapshot import get_fund_list
-from src.sync_fund_base import sync_fund_base, further_complete_base_info
 from src.acquire_fund_base import acquire_fund_base
-from src.fund_info_supplement import update_fund_archive_status
 from src.acquire_fund_quarter import acquire_fund_quarter
-from src.fund_statistic import get_combination_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail,calculate_quarter_fund_total
+from src.acquire_fund_snapshot import get_fund_list
+from src.fund_info_supplement import update_fund_archive_status
+from src.fund_statistic import (all_stock_holder_detail, all_stocks_rank,
+                                calculate_quarter_fund_total,
+                                get_combination_holder_stock_detail,
+                                t100_stocks_rank)
 from src.fund_strategy import output_high_score_funds
+from src.sync_fund_base import further_complete_base_info, sync_fund_base
+
 
 def main():
     input_value = input("请输入下列序号执行操作:\n \

@@ -34,7 +34,8 @@
 
 <img src="./screenshot/fund_list.png" style="zoom:50%;" />
 
-### 晨星基金详情页数据--不变数据
+
+### 晨星基金详情页数据--固定数据
 
 > 爬取基金详情页的数据， 根据`晨星列表数据` 数据，遍历爬取单支基金的详情页数据（包括名称，代码，分类，成立时间，基金公司）等维度，后续还有根据这些数据爬取基金的持仓信息，为后面筛选股票做好进一步铺垫
 
@@ -42,7 +43,7 @@
 
 ### 晨星基金详情页数据--季度变动数据
 
-> 爬取基金详情页的数据， 根据第二部分`晨星基础数据` 数据，过滤掉货币，纯债基金，爬取单支基金的详情页数据（包括总资产，投资风格，各种风险信息，评级，股票，债券持仓比例等）等维度
+> 爬取基金详情页的数据， 根据第二部分`晨星基础数据` 数据，过滤掉货币，纯债基金等不是标的的基金，爬取目标基金的详情页数据（包括总资产，投资风格，各种风险信息，评级，股票，债券持仓比例等）等维度
 
 <img src="./screenshot/fund_season.png" style="zoom:50%;" />
 
@@ -59,17 +60,22 @@
 
 ## 技术点
 
-- `selenium` 模拟登录， 切换分页
-- `BeautifulSoup` 解析 HTML
+- `selenium` 模拟登录， 切换分页, 获取html, 最终获取数据
+- 部分页面用了`BeautifulSoup` 解析 HTML
 - `pandas` 处理数据
-- 工具 — 数据库用了`pymysql` , id 使用雪花 id，验证码识别使用了`pytesseract`
+- 数据库mymysql + `sqlalchemy`(部分数据用, 部分写原生sql语句)
+- 工具:
+
+  1. 通过图片比较获得某一个评级数据 -- 用了`get_star_count_with_np`,还提供了备用图片相似度比较`get_star_count_with_sewar`
+  2. 验证码识别使用了`pytesseract`(现在已经不用了)
 - 多线程爬取
+- 其他 -- 一部分数据维度需要其他站点的数据补充,比如检查某一个基金是否已经清算退市, 同类基金的总资产信息等, 直接用request库调用api获取
 
 ## 爬虫流程
 
 1. `selenium` 模拟登录：
-   - 可采用验证码识别方式
-   - 设置已经登录好的账号 cookies
+   - 直接在env文件设置好账号, 密码<del>可采用验证码识别方式</del>
+   - 复制已经登录好的账号cookies,设置在env的login_cookie变量中
 2. 利用`BeautifulSoup` 解析 html，提取当前页的基金列表信息，存入到 mysql 中，或者追加到 csv 中 （目前仅 acquire_fund_snapshot.py 支持导出 csv）
 3. `selenium` 模拟切换分页，重复第二，第三步
 4. 所有的页数据爬取完，退出浏览器
@@ -83,17 +89,35 @@ pip install -r requirements.txt
 
 ### 本地运行前置条件：
 
-1.  安装好 chromedriver 驱动（版本需要和你本地电脑 Chrome 浏览器版本一致）， 安装 tesseract(识别二维码需要，如果是用 cookies 方式则不需要) 并将 tesseract 加到环境变量下，运行报错的话可能没有安装训练库，可参考[https://stackoverflow.com/questions/14800730/tesseract-running-error](https://stackoverflow.com/questions/14800730/tesseract-running-error)，如果是需要连接数据库的话，还要配置好表结构
-2.  如果需要存数据到数据库，需要建好对应表结构，(运行`acquire_fund_snapshot.py`可以存在 Excel，其他目前都是存在数据库中)
+1. 安装好 chromedriver 驱动（版本需要和你本地电脑 Chrome 浏览器版本一致）， 
+2. <del>安装 tesseract(识别二维码需要，如果是用 cookies 方式则不需要) 并将 tesseract 加到环境变量下，运行报错的话可能没有安装训练库，可参考[https://stackoverflow.com/questions/14800730/tesseract-running-error](https://stackoverflow.com/questions/14800730/tesseract-running-error)，如果是需要连接数据库的话，还要配置好表结构</del>
+3. 如果需要存数据到数据库，需要建好对应表结构，(运行`acquire_fund_snapshot.py`可以存在 Excel，其他目前都是存在数据库中)
 
-3.  从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
+4.  从环境参数模板（.env.example）中复制一份文件（.env）,修改本地环境变量
 
     > `cp .env.example .env`
 
     根据自己情况改环境变量值，例如晨星用户名，密码，执行特定的爬虫脚本
 
-4.  运行 -- 先按顺序运行`acquire_fund_snapshot`,`acquire_fund_base`, `acquire_fund_quarter`获取数据源，后面根据自己需要运行统计，分析文件
+5.  运行 --执行`python main.py`
 
+```python
+input_value = input("请输入下列序号执行操作:\n \
+        1.“快照” \n \
+        2.“新基入库”\n \
+        3.“快照同步新基”\n \
+        4.“补充基金基础数据”\n \
+        5.“基金状态归档”\n \
+        6.“季度信息”\n \
+        7.“基金持仓股排名”\n \
+        8.“基金重仓股Top100”\n \
+        9.“股票持仓基金明细”\n \
+        10.“股票持仓基金汇总”\n \
+        11.“高分基金”\n \
+        12.“组合持仓明细”\n \
+    输入：")
+```
+爬取数据的种子是从**快照**数据开始的(也就是所有基金列表数据), 有了种子数据之后,再爬取基金基础数据到基金基础表中. 然后根据基金基础表去爬取基金季度一些信息. 获取到数据之后就可以更加自己的需求进行分析和统计了
 ### 文件目录介绍
 
 ```bash
@@ -110,6 +134,7 @@ pip install -r requirements.txt
     ├── fund_info_supplement.py  # 执行补充维度清算，总资产信息
     ├── fund_statistic.py        # 基金重仓股分析
     ├── fund_strategy.py         # 高性价比基金筛选
+    ├── sync_fund_base.py         # 将快照爬取和基础数据合到一起了
     ├── assets                   # 一些静态资源,例如星级图片
     │   └── star
     │       ├── star0.gif
@@ -120,6 +145,8 @@ pip install -r requirements.txt
     │       ├── star5.gif
     │       └── tmp.gif
     ├── fund_statistic.py        # 统计数据
+    ├── config
+    │   └── env.py               # 读取.env配置
     ├── db
     │   └── connect.py           # 连接数据库
     ├── fund_info
@@ -128,9 +155,11 @@ pip install -r requirements.txt
     │   ├── statistic.py         # 基金统计
     │   ├── csv.py               # 基金存为csv
     │   └── supplement.py        # 补充或者更新基金清算，总资产维度信息
+    ├── crud                     # 利用sqlachemly 进行crud
+    ├── models                   # sqlachemly 表model
     ├── lib
-    ├── outcome                      # 数据成果整理子项目
     │   └── mysnowflake.py       # 雪花id生成
+    ├── outcome                      # 数据成果整理子项目
     └── utils.py                 # 一些工具函数，比如登录，设置cookies等
         ├── __init__.py
         ├── cookies.py
@@ -139,19 +168,17 @@ pip install -r requirements.txt
         └── login.py
 
 ```
-
-> 提示: 首次执行时先执行 `python ./src/acquire_fund_snapshot.py`, 因为列表快照数据是其他数据的来源
-
 ## 其他
 
 涉及到一些细节有：
 
-1. 验证码识别错误的话，怎么处理
+1. <del>验证码识别错误的话，怎么处理</del>
 2. 切换分页如果是最后一页时，怎么处理下一页点击
 3. 晨星评级是用图片表示，如果转化成数字表示
 4. 如何保证循环当前页与浏览器当前页一致
 5. 多线程爬取时，线程锁
-6. ...
+6. 同名不同类型基金爬取处理
+7. ...
 
 以上问题，我都做了相对应的处理。
 
@@ -193,3 +220,5 @@ pip install -r requirements.txt
 
 如果有问题，有兴趣的话，欢迎提 issue，私聊，star。
 [![Page Views Count](https://badges.toozhao.com/badges/01FYTB9DBYFE4G1408VKKT7H4G/green.svg)](https://badges.toozhao.com/stats/01FYTB9DBYFE4G1408VKKT7H4G "Get your own page views count badge on badges.toozhao.com")
+
+另外如果大家感兴趣可转债数据的话欢迎跳到[convertible-bond-crawler](https://github.com/jackluson/convertible-bond-crawler)

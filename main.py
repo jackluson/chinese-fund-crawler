@@ -14,24 +14,27 @@ import sys
 sys.path.append('./src')
 
 from src.acquire_fund_snapshot import get_fund_list
+from src.sync_fund_base import sync_fund_base, further_complete_base_info
 from src.acquire_fund_base import acquire_fund_base
-from src.fund_info.supplement import FundSupplement
+from src.fund_info_supplement import update_fund_archive_status
 from src.acquire_fund_quarter import acquire_fund_quarter
-from src.fund_statistic import get_special_fund_code_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail,calculate_quarter_fund_total
+from src.fund_statistic import get_combination_holder_stock_detail, all_stocks_rank,t100_stocks_rank,all_stock_holder_detail,calculate_quarter_fund_total
 from src.fund_strategy import output_high_score_funds
 
 def main():
     input_value = input("请输入下列序号执行操作:\n \
         1.“快照” \n \
         2.“新基入库”\n \
-        3.“季度信息”\n \
-        4.“基金状态归档”\n \
-        5.“组合持仓明细”\n \
-        6.“基金持仓股排名”\n \
-        7.“基金重仓股Top100”\n \
-        8.“股票持仓基金明细”\n \
-        9.“股票持仓基金汇总”\n \
-        10.“高分基金”\n \
+        3.“快照同步新基”\n \
+        4.“补充基金基础数据”\n \
+        5.“基金状态归档”\n \
+        6.“季度信息”\n \
+        7.“基金持仓股排名”\n \
+        8.“基金重仓股Top100”\n \
+        9.“股票持仓基金明细”\n \
+        10.“股票持仓基金汇总”\n \
+        11.“高分基金”\n \
+        12.“组合持仓明细”\n \
     输入：")
     if input_value == '1':
         page_index = 1
@@ -39,23 +42,26 @@ def main():
     elif input_value == '2':
         acquire_fund_base()  # 执行行业股票信息入库
     elif input_value == '3':
-        acquire_fund_quarter()
+        page_index = 1
+        sync_fund_base(page_index)
     elif input_value == '4':
-        fund_supplement = FundSupplement()
-        # 补充基金清算维度信息
-        fund_supplement.update_archive_status()
+        further_complete_base_info()
     elif input_value == '5':
-        get_special_fund_code_holder_stock_detail()
+        update_fund_archive_status()
     elif input_value == '6':
-        all_stocks_rank()
+        acquire_fund_quarter()
     elif input_value == '7':
-        t100_stocks_rank()
+        all_stocks_rank()
     elif input_value == '8':
-        all_stock_holder_detail()
+        t100_stocks_rank()
     elif input_value == '9':
-        calculate_quarter_fund_total()
+        all_stock_holder_detail()
     elif input_value == '10':
+        calculate_quarter_fund_total()
+    elif input_value == '11':
         output_high_score_funds()
+    elif input_value == '12':
+        get_combination_holder_stock_detail()
     else:
         print('输入有误')
 

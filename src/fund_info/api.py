@@ -148,7 +148,7 @@ class FundApier:
                 'fundcode': self.fund_code,
             }
             # res = requests.post(url, headers=headers, data=payload, verify=False)
-            res = requests.post(url, headers=headers, data=payload)
+            res = session.post(url, headers=headers, data=payload)
             # print("res", res)
             res.encoding = "utf-8"
             time.sleep(1)

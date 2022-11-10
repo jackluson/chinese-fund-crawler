@@ -283,7 +283,7 @@ def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshol
         update_xlsx_file(path, df_list, quarter_index)
 
 
-def get_special_fund_code_holder_stock_detail(each_statistic=None, quarter_index=None):
+def get_combination_holder_stock_detail(each_statistic=None, quarter_index=None):
     """获取某些基金的十大持仓股票信息
     """
     if each_statistic == None:
@@ -462,7 +462,7 @@ if __name__ == '__main__':
     # t100_stocks_rank(each_statistic=each_statistic)
 
     # 获取某些基金的十大持仓股票信息
-    # get_special_fund_code_holder_stock_detail()
+    # get_combination_holder_stock_detail()
 
     calculate_quarter_fund_total()
     # select_condition_stocks_rank()

@@ -8,14 +8,15 @@ Author: luxuemin2108@gmail.com
 Copyright (c) 2021 Camel Lu
 '''
 
-
 from fund_info.supplement import FundSupplement
 
 
-if __name__ == '__main__':
+def update_fund_archive_status():
     fund_supplement = FundSupplement()
     # 补充基金清算维度信息
     fund_supplement.update_archive_status()
 
+if __name__ == '__main__':
+
     # 补充除了A类基金的其他类基金的总资产信息
-    # fund_supplement.update_fund_total_asset()
+    update_fund_archive_status()

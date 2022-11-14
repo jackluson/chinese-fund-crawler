@@ -10,6 +10,7 @@ star-record/*
 src/temp_update_*
 abnormal
 demo/
+/outcome
 #outcome/stocks/
 output/json/
 !output/xlsx/

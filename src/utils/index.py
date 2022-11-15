@@ -104,12 +104,11 @@ def get_star_count_with_np(morning_star_url):
         raise BaseException('识别失败')
 
 def get_star_count(morning_star_url, fund_code, img_ele=None):
-    # path = './assets/star/star'
     try:
-        return get_star_count_with_np(morning_star_url)
-    except BaseException:
-        print('图片比较失败')
         return get_star_count_with_sewar(fund_code, img_ele)
+    except BaseException:
+        print('图片相似度失败')
+        return get_star_count_with_np(morning_star_url)
 
 def parse_csv(datafile):
     data = []

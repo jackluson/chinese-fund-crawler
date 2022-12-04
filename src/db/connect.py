@@ -7,6 +7,7 @@ def connect():
         host=env_db_host, user=env_db_user, password=env_db_password, db=env_db_name, charset='utf8')
     return connect
 
+
 def connect_dict():
     connect = pymysql.connect(
         host=env_db_host, user=env_db_user, password=env_db_password, db=env_db_stock_name,

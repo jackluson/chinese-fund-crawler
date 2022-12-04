@@ -123,7 +123,7 @@ input_value = input("请输入下列序号执行操作:\n \
 ```bash
 .
 ├── .env                         #本地环境配置参数
-├── .env.example                 #环境配置参数模板实例
+├── .env                 #环境配置参数模板实例
 ├── .gitignore
 ├── README.md
 ├── requirements.txt

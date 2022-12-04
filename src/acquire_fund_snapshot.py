@@ -27,6 +27,7 @@ from utils.index import get_star_count
 from utils.login import login_morning_star
 from utils.driver import create_chrome_driver, text_to_be_present_in_element
 
+
 connect_instance = connect()
 cursor = connect_instance.cursor()
 

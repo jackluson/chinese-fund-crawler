@@ -13,7 +13,9 @@ import sys
 
 sys.path.append('./src')
 
+from src.acquire_fund_snapshot import get_fund_list
 from src.acquire_fund_base import acquire_fund_base
+from src.fund_info.supplement import FundSupplement
 from src.acquire_fund_quarter import acquire_fund_quarter
 from src.acquire_fund_snapshot import get_fund_list
 from src.fund_info_supplement import update_fund_archive_status
@@ -26,19 +28,19 @@ from src.sync_fund_base import further_complete_base_info, sync_fund_base
 
 
 def main():
-    input_value = input("请输入下列序号执行操作:\n \
-        1.“快照” \n \
-        2.“新基入库”\n \
-        3.“快照同步新基”\n \
-        4.“补充基金基础数据”\n \
-        5.“基金状态归档”\n \
-        6.“季度信息”\n \
-        7.“基金持仓股排名”\n \
-        8.“基金重仓股Top100”\n \
-        9.“股票持仓基金明细”\n \
-        10.“股票持仓基金汇总”\n \
-        11.“高分基金”\n \
-        12.“组合持仓明细”\n \
+    input_value = input("Please enter the following serial number to perform the operation:\n \
+        1.“Snapshot” \n \
+        2.“New base storage”\n \
+        3.“Snapshot Sync New Base”\n \
+        4.“Supplementary Fund Basic Data”\n \
+        5.“Fund Status Archive”\n \
+        6.“Quarter Information”\n \
+        7.“Ranking of Fund Holdings”\n \
+        8.“Top 100 Awkward Fund Stocks”\n \
+        9. ”Stock holding fund details”\n \
+        10.”Summary of stock holding funds”\n \
+        11.”High Score Fund” \n  \
+        12.”Composite position details” \n  \
     输入：")
     if input_value == '1':
         page_index = 1
@@ -64,8 +66,6 @@ def main():
         calculate_quarter_fund_total()
     elif input_value == '11':
         output_high_score_funds()
-    elif input_value == '12':
-        get_combination_holder_stock_detail()
     else:
         print('输入有误')
 

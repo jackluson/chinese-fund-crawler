@@ -1,0 +1,42 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredPackages">
+        <value>
+          <list size="29">
+            <item index="0" class="java.lang.String" itemvalue="beautifulsoup4" />
+            <item index="1" class="java.lang.String" itemvalue="gensim" />
+            <item index="2" class="java.lang.String" itemvalue="networkx" />
+            <item index="3" class="java.lang.String" itemvalue="numpy" />
+            <item index="4" class="java.lang.String" itemvalue="requests" />
+            <item index="5" class="java.lang.String" itemvalue="chardet" />
+            <item index="6" class="java.lang.String" itemvalue="stop_words" />
+            <item index="7" class="java.lang.String" itemvalue="jupyter_notebook" />
+            <item index="8" class="java.lang.String" itemvalue="certifi" />
+            <item index="9" class="java.lang.String" itemvalue="soupsieve" />
+            <item index="10" class="java.lang.String" itemvalue="urllib3" />
+            <item index="11" class="java.lang.String" itemvalue="jsonlines" />
+            <item index="12" class="java.lang.String" itemvalue="idna" />
+            <item index="13" class="java.lang.String" itemvalue="schedule" />
+            <item index="14" class="java.lang.String" itemvalue="datetime" />
+            <item index="15" class="java.lang.String" itemvalue="os" />
+            <item index="16" class="java.lang.String" itemvalue="folderstats" />
+            <item index="17" class="java.lang.String" itemvalue="pytest" />
+            <item index="18" class="java.lang.String" itemvalue="pytest-cov" />
+            <item index="19" class="java.lang.String" itemvalue="mlxtend.frequent_patterns" />
+            <item index="20" class="java.lang.String" itemvalue="django-scheduler" />
+            <item index="21" class="java.lang.String" itemvalue="decouple" />
+            <item index="22" class="java.lang.String" itemvalue="target-csv" />
+            <item index="23" class="java.lang.String" itemvalue="tap-salesforce" />
+            <item index="24" class="java.lang.String" itemvalue="logging" />
+            <item index="25" class="java.lang.String" itemvalue="singer-python" />
+            <item index="26" class="java.lang.String" itemvalue="gluestick" />
+            <item index="27" class="java.lang.String" itemvalue="sqlite3" />
+            <item index="28" class="java.lang.String" itemvalue="json" />
+          </list>
+        </value>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

@@ -15,7 +15,7 @@ demo/
 output/json/
 !output/xlsx/
 .env
-
+.idea
 # C extensions
 *.so
 

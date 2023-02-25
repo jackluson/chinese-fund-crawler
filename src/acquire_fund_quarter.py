@@ -201,14 +201,15 @@ def acquire_fund_quarter():
                                 init_total_asset = init_total_asset - total_asset
                             else:
                                 print("total_asset is None", item_code, item[2])
-                            manager_assoc_data = {
-                                'quarter_index': quarter_index,
-                                'manager_start_date': manager_item['manager_start_date'],
-                                'manager_id': manager_item['manager_id'],
-                                'fund_code': item_code
-                            }
-                            manager_assoc = ManagerAssoc(**manager_assoc_data)
-                            manager_assoc.upsert()
+                            for manager_item in each_fund.manager_list:
+                                manager_assoc_data = {
+                                    'quarter_index': quarter_index,
+                                    'manager_start_date': manager_item['manager_start_date'],
+                                    'manager_id': manager_item['manager_id'],
+                                    'fund_code': item_code
+                                }
+                                manager_assoc = ManagerAssoc(**manager_assoc_data)
+                                manager_assoc.upsert()
                             quarterly_dict['fund_code'] = item_code
                             quarterly_dict['total_asset'] = total_asset
                             quarterly_dict['id'] = snow_flake_id + i + 1

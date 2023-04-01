@@ -26,25 +26,25 @@ from src.sync_fund_base import further_complete_base_info, sync_fund_base
 
 
 def main():
-    input_value = input("请输入下列序号执行操作:\n \
-        1.“快照” \n \
-        2.“新基入库”\n \
-        3.“快照同步新基”\n \
-        4.“补充基金基础数据”\n \
-        5.“基金状态归档”\n \
-        6.“季度信息”\n \
-        7.“基金持仓股排名”\n \
-        8.“基金重仓股Top100”\n \
-        9.“股票持仓基金明细”\n \
-        10.“股票持仓基金汇总”\n \
-        11.“高分基金”\n \
-        12.“组合持仓明细”\n \
-    输入：")
+    input_value = input("Please enter the following serial number to perform the operation:\n \
+        1.“Snapshot” \n \
+        2.“New base storage”\n \
+        3.“Snapshot Sync New Base”\n \
+        4.“Supplementary Fund Basic Data”\n \
+        5.“Fund Status Archive”\n \
+        6.“Quarter Information”\n \
+        7.“Ranking of Fund Holdings”\n \
+        8.“Top 100 Awkward Fund Stocks”\n \
+        9. ”Stock holding fund details”\n \
+        10.”Summary of stock holding funds”\n \
+        11.”High Score Fund” \n  \
+        12.”Composite position details” \n  \
+    enter：")
     if input_value == '1':
         page_index = 1
-        get_fund_list(page_index)  # 执行申万行业信息入库
+        get_fund_list(page_index)  # Execute Shenwan industry information storage
     elif input_value == '2':
-        acquire_fund_base()  # 执行行业股票信息入库
+        acquire_fund_base()  # Execute industry stock information storage
     elif input_value == '3':
         page_index = 1
         sync_fund_base(page_index)
@@ -67,7 +67,7 @@ def main():
     elif input_value == '12':
         get_combination_holder_stock_detail()
     else:
-        print('输入有误')
+        print('typo')
 
 
 if __name__ == '__main__':

@@ -26,7 +26,8 @@ class FundSupplement:
       funds = fund_query.select_quarter_fund(0, 15000)
       print("funds's len", len(funds))
       for index in range(start, len(funds)):
-        # print("index", index)
+        if index % 50 == 0:
+          print("index", index)
         fund_item = funds[index]
         fund_code = fund_item[0]
         fund_api = FundApier(fund_code, platform='zh_fund')

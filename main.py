@@ -42,13 +42,15 @@ def main():
     输入：")
     if input_value == '1':
         page_index = 1
-        get_fund_list(page_index)  # 执行申万行业信息入库
+        get_fund_list(page_index)  
     elif input_value == '2':
-        acquire_fund_base()  # 执行行业股票信息入库
+        acquire_fund_base()  
     elif input_value == '3':
-        page_index = 1
+        # 将第1步和第2步合并
+        page_index = 506
         sync_fund_base(page_index)
     elif input_value == '4':
+        # 由于执行3, 快照页基金基础数据不全，需要补充
         further_complete_base_info()
     elif input_value == '5':
         update_fund_archive_status()
@@ -61,6 +63,7 @@ def main():
     elif input_value == '9':
         all_stock_holder_detail()
     elif input_value == '10':
+        #先执行9,再执行10
         calculate_quarter_fund_total()
     elif input_value == '11':
         output_high_score_funds()

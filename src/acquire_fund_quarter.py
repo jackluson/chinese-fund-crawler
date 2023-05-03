@@ -233,8 +233,9 @@ def acquire_fund_quarter():
                 print(current_thread().getName(), 'page_start', page_start)
                 sleep(3)
         except(BaseException):
+            print('start', start)
             chrome_driver.close()
-            raise BaseException
+            # raise BaseException
         chrome_driver.close()
     thread_count = 6
     total_start_time = time()

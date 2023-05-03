@@ -238,6 +238,7 @@ def all_stocks_rank(each_statistic=None):
     df_other_list.to_excel(writer, sheet_name=other_market)
 
     writer.save()
+    print('输出到:', output_file, "完成\n" )
 
 
 def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshold=0):
@@ -273,7 +274,7 @@ def all_stock_holder_detail(each_statistic=None, *, quarter_index=None, threshol
             elif bool(re.search("^(8|4)(3|7)\d{4}$", stock_code)):
                 path = 'A股/北交所'
             else:
-                print('stock_name_code', stock_name_code)
+                print('该%s没有匹配股票市场:', stock_name_code)
         hold_fund_list = sorted(
             stock[1]['fund_list'], key=lambda x: x['持有市值(亿元)'], reverse=True)
         df_list = pd.DataFrame(hold_fund_list)

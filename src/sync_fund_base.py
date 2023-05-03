@@ -85,7 +85,7 @@ def sync_fund_base(page_index):
                         'fund_cat': cur_fund_cat
                     }
                     fund_base = FundBase(**fund_base_params)
-                    print('fund_name:', cur_fund_name, 'fund_code:', cur_fund_code, 'morning_star_code:', cur_morning_star_code)
+                    print('new fund:', cur_fund_name, 'fund_code:', cur_fund_code, 'morning_star_code:', cur_morning_star_code)
                     fund_base.upsert()
         # 获取下一页元素
         next_page = chrome_driver.find_element(By.XPATH, xpath_str)
@@ -99,6 +99,7 @@ def sync_fund_base(page_index):
 def further_complete_base_info():
     all_funds = query_empty_company_or_found_date_fund(0, 10000)
     err_info = read_error_code_from_json()
+    print("new fund 's len:", len(all_funds))
     error_funds_with_page = err_info.get('error_funds_with_page')
     error_funds_with_found_date = err_info.get('error_funds_with_found_date')
     error_funds_with_unmatch = err_info.get('error_funds_with_unmatch')
@@ -117,7 +118,7 @@ def further_complete_base_info():
             # results = query_empty_company_and_found_date_fund(page_start, page_limit)
             for record in results:
                 fund_code = record.fund_code
-                if fund_code in error_funds_with_page or fund_code in error_funds_with_found_date:
+                if fund_code in error_funds_with_page or fund_code in error_funds_with_found_date or fund_code in error_funds_with_unmatch:
                     continue
                 morning_star_code = record.morning_star_code
                 fund_name = record.fund_name
@@ -149,7 +150,7 @@ def further_complete_base_info():
             page_start = page_start + page_limit
         chrome_driver.close()
     try:
-        bootstrap_thread(crawlData, len(all_funds), 6)
+        bootstrap_thread(crawlData, len(all_funds), 3)
         write_fund_json_data({'error_funds_with_page': error_funds_with_page, 'error_funds_with_found_date': error_funds_with_found_date, 'error_funds_with_unmatch': error_funds_with_unmatch}, filename=filename, file_dir=file_dir)
     except:
         write_fund_json_data({'error_funds_with_page': error_funds_with_page, 'error_funds_with_found_date': error_funds_with_found_date, 'error_funds_with_unmatch': error_funds_with_unmatch}, filename=filename, file_dir=file_dir)

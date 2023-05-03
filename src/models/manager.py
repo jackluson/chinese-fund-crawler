@@ -14,7 +14,6 @@ from sqlalchemy import (BigInteger, Column, Date, DateTime, ForeignKey,
                         Integer, String, Table, UniqueConstraint, func, text)
 from sqlalchemy.orm import registry, relationship
 
-from db.engine import get_engine
 from lib.mysnowflake import IdWorker
 from models.var import Model, ORM_Base, engine, prefix
 

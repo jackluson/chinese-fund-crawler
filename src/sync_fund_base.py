@@ -26,9 +26,16 @@ from utils.login import login_morning_star
 
 
 def sync_fund_base(page_index):
-    morning_fund_selector_url = "https://www.morningstar.cn/fundselect/default.aspx"
+    morning_fund_selector_url = "/fundselect/default.aspx"
     chrome_driver = create_chrome_driver()
-    login_morning_star(chrome_driver, morning_fund_selector_url)
+    is_sucess = login_morning_star(chrome_driver, morning_fund_selector_url)
+    if is_sucess == False:
+        return
+    # current_url = chrome_driver.current_url
+    # print("current_url", current_url)
+    current_pathname = chrome_driver.execute_script("return window.location.pathname")
+    if current_pathname != morning_fund_selector_url:
+        chrome_driver.get(morning_fund_selector_url)
     page_count = 25 # 晨星固定分页数
     page_total = math.ceil(int(chrome_driver.find_element(By.XPATH,
         '/html/body/form/div[8]/div/div[4]/div[3]/div[2]/span').text) / page_count)

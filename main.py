@@ -47,7 +47,7 @@ def main():
         acquire_fund_base()  
     elif input_value == '3':
         # 将第1步和第2步合并
-        page_index = 506
+        page_index = 1
         sync_fund_base(page_index)
     elif input_value == '4':
         # 由于执行3, 快照页基金基础数据不全，需要补充
